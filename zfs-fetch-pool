@@ -127,10 +127,12 @@ for local_fs in local_filesystems:
 	send = Popen(sendcmd,stdout=PIPE)
 	receive = Popen(receivecmd,stdin=send.stdout)
 	receive_ret = receive.wait()
-	error("ZFS recv failed with return code %s.  Check that zfsrecvsh is working."%receive_ret)
+	if receive_ret:
+		error("ZFS recv failed with return code %s.  Check that zfsrecvsh is working."%receive_ret)
 	send_ret = send.wait()
-	error("ZFS send failed with return code %s."%send_ret)
-	if receive_ret or send_ret:
+	if send_ret:
+		error("ZFS send failed with return code %s."%send_ret)
+	if receive_ret != 0 or send_ret != 0:
 		ret = [ m for m in [receive_ret,send_ret] if m != 0][0]
 		error("Aborting prematurely without destructive action")
 		sys.exit(ret)
