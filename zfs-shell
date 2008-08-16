@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+if [ "$1" == "-c" ] ; then
+	shift
+	exec "$0" $@
+fi
+
+export PATH=/sbin:/usr/sbin:/usr/local/sbin:"$PATH"
+
+cmd="$1"
+
+if [ "$cmd" == "recv" -o "$cmd" == "send" -o "$cmd" == "destroy" ] ; then
+	# FIXME: verify that the name of the snapshot contains an @
+	sudo zfs "$@"
+	exit 0
+fi
+fi
+
+echo "usage: zfs-shell [ send | recv | destroy ] <snapshotname>" >&2
+exit 64
