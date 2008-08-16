@@ -1,0 +1,157 @@
+#!/usr/bin/env python
+
+from subprocess import Popen,PIPE,check_call,call
+import datetime
+import sys
+import os
+import logging
+import re
+logging.basicConfig()
+logging.getLogger().setLevel(logging.WARN)
+if "-v" in sys.argv[1:]:
+	logging.getLogger().setLevel(logging.INFO)
+	sys.argv = [ sys.argv[0] ] + sys.argv[2:]
+log = logging.getLogger().info
+error = logging.getLogger().error
+
+# to ensure the ZFS utilities are in the path.  Just in case.
+os.environ["PATH"] = "/sbin:/usr/sbin:/usr/local/sbin:" + os.environ["PATH"]
+
+try:
+	local_pool = sys.argv[1]
+	m = re.findall("^(|ssh://|rsh://)([^/.]+)@(.+):(.+)$",sys.argv[2])[0]
+	method,user,host,remote_pool = m
+	if not method: method = "ssh"
+	elif method == "ssh://": method = "ssh"
+	elif method == "rsh://": method = "rsh"
+	else: assert False
+	log("Connecting through %s as %s to %s and graft %s into %s",
+		method,user,host,local_pool,remote_pool)
+except (IndexError,ValueError), e:
+	error("usage: zfs-send-pool [-v] <localpool> <user@host:pool>")
+	sys.exit(os.EX_USAGE)
+
+local_cmd = ["zfs"]
+remote_cmd = [method,"-l",user,host]
+# The idea behind this algorithm is that a local zpool is grafted into a dataset at a remote zpool, by way of daily snapshots
+
+def get_todays_snapshot_name():
+	d = datetime.date.today()
+	name = "%04d-%02d-%02d"%(d.year,d.month,d.day)
+	return "zfs-tools-%s"%name
+
+def parse_zfs_list(text):
+	datasets = [ line.split()[0] for line in text.splitlines() if line ][1:]
+	filesystems = [ f for f in datasets if "@" not in f ]
+	snapshots = [ f.split("@",1) for f in datasets if "@" in f ]
+	b = {}
+	for fs,snapname in snapshots:
+		if fs not in b: b[fs] = []
+		b[fs].append(snapname)
+	return filesystems,b
+
+def get_datasets(cmd):
+	return parse_zfs_list(Popen(cmd + ["list"], stdout=PIPE).communicate()[0])
+
+def get_local_datasets(): return get_datasets(local_cmd)
+def get_remote_datasets(): return get_datasets(remote_cmd)
+
+def make_snapshot(cmd,pool,name):
+	check_call(cmd + ["snapshot","-r","%s@%s"%(pool,name)])
+
+def remove_snapshot(cmd,pool,name):
+	check_call(cmd + ["destroy","-r","%s@%s"%(pool,name)])
+
+todays_snapshot = get_todays_snapshot_name()
+
+if todays_snapshot not in get_local_datasets()[1][local_pool]:
+	log("Making today's snapshot")
+	make_snapshot(local_cmd,local_pool,todays_snapshot)
+
+local_filesystems,local_snapshots = get_local_datasets()
+remote_filesystems,remote_snapshots = get_remote_datasets()
+
+for local_fs in local_filesystems:
+	remote_fs = "%s/%s"%(remote_pool,local_fs)
+
+	# if the local filesystem does not exist in the remote pool
+	if remote_fs not in remote_filesystems:
+		# send today's snapshot over there
+		log("Sending %s in full"%local_fs)
+		sendcmd = local_cmd + [
+					"send",
+					"%s@%s"%(local_fs,todays_snapshot)
+				]
+		receivecmd = remote_cmd + [
+					"recv",
+					"%s@%s"%(remote_fs,todays_snapshot)
+				]
+	else: #if filesystem does exist
+		# if by any chance the FS exists but has no snapshots
+		if remote_fs not in remote_snapshots:
+			# FIXME: maybe we can fix this by actually sending a full snapshot, or maybe we don't want to!
+			error("%s exists on target but has no snapshots"%local_fs)
+			continue
+
+		# if the latest snapshot is the backup server
+		if todays_snapshot in remote_snapshots[remote_fs]:
+			# we safely continue to the next item
+			log("Skipping %s: today's snapshot already in target"%local_fs)
+			continue
+
+		# find latest common ancestor
+		last_common_snapshot = None
+		for s in [ m for m in remote_snapshots[remote_fs] if m.startswith("zfs-tools-") ]:
+			if s in local_snapshots[local_fs]: last_common_snapshot = s
+		
+		# no common ancestor?
+		if not last_common_snapshot:
+			# bomb out, motherfucker!
+			error("%s exists on target, but has no common snapshots"%local_fs)
+			continue
+
+		# and now we're ready to do the incremental backup
+		log("Sending %s incrementally from %s"%(local_fs,last_common_snapshot))
+		sendcmd = local_cmd + [
+				"send",
+				"-i",
+				"@%s"%last_common_snapshot,
+				"%s@%s"%(local_fs,todays_snapshot)
+			]
+		receivecmd = remote_cmd + [
+				"recv",
+				"-F",
+				"%s@%s"%(remote_fs,todays_snapshot)
+			]
+
+	send = Popen(sendcmd,stdout=PIPE)
+	receive = Popen(receivecmd,stdin=send.stdout)
+	receive_ret = receive.wait()
+	error("ZFS recv failed with return code %s.  Check that zfsrecvsh is working."%receive_ret)
+	send_ret = send.wait()
+	error("ZFS send failed with return code %s."%send_ret)
+	if receive_ret or send_ret:
+		ret = [ m for m in [receive_ret,send_ret] if m != 0][0]
+		error("Aborting prematurely without destructive action")
+		sys.exit(ret)
+
+# Refresh our lists of snapshots
+local_filesystems,local_snapshots = get_local_datasets()
+remote_filesystems,remote_snapshots = get_remote_datasets()
+
+for snapshot in [
+	    m for m
+	    in local_snapshots[local_pool]
+	    if m.startswith("zfs-tools-")
+	]:
+	if snapshot != todays_snapshot:
+		log("Removing obsolete local snapshot %s"%snapshot)
+		remove_snapshot(local_cmd,local_pool,snapshot)
+for snapshot in [
+	    m for m
+	    in remote_snapshots["%s/%s"%(remote_pool,local_pool)]
+	    if m.startswith("zfs-tools-")
+	]:
+	if snapshot != todays_snapshot:
+		log("Removing obsolete remote snapshot %s"%snapshot)
+		remove_snapshot(remote_cmd,"%s/%s"%(remote_pool,local_pool),snapshot)

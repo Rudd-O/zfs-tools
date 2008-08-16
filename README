@@ -1,0 +1,101 @@
+The ZFS backup tools will help you graft an entire ZFS pool as a filesystem
+into a backup machine, every day.  Two utilities do this:
+
+1. zfsrecvsh:
+   a shell for you to install in the machine that will receive the backups
+
+2. zfs-send-pool:
+   a command that snapshots an entire zpool and sends it using the transport
+   you specify to a machine with zfsrecvsh installed
+
+What they actually do is rather simple:
+
+- zfs-send-pool recursively snapshots a pool on your machine with a date tag
+- then, zfs-send-pool connects to zfsrecvsh and does this:
+  - if no old snapshot for that pool exists, it sends the entire snapshot
+    over and grafts it as a filesystem whose name is prefixed with the
+    source vault name
+  - if an old snapshot already exists, it incrementally sends the recently
+    captured snapshot
+- finally, zfs-send-pool deletes old snapshots it created earlier for its use
+
+*** Setting up ***
+
+Setup is rather complicated.  It assumes that you already have ZFS running
+and vaults on both the machine you're going to back up and the machine that
+will be receiving the backup.
+
+*** On the backup machine ***
+
+- Install the zfsrecvsh command
+  cp zfsrecvsh /usr/local/sbin
+  chmod 755 /usr/local/sbin/zfsrecvsh
+  chown root.root /usr/local/sbin/zfsrecvsh
+
+- Create a user with a home directory
+  (use your distribution's utilities)
+
+- Set its shell to zfsrecvsh
+  chsh -s /usr/local/sbin/zfsrecvsh
+
+- Let the new user run the zfs command with sudo:
+  zfsbackup ALL = NOPASSWD: /usr/local/sbin/zfs
+
+*** On the machine to be backed up ***
+
+- Install zfs-send-pool
+  cp zfs-send-pool /usr/local/sbin
+  chmod 755 /usr/local/sbin/zfs-send-pool
+  chown root.root /usr/local/sbin/zfs-send-pool
+
+*** Set up authentication ***
+
+Now you need to set authentication up.  If you're going to use SSH, your best bet
+is to:
+
+- enable PubkeyAuthentication,
+- generate a private/public key pair for the root user of the machine to be
+  backed up,
+- add the public key into the newly created user of the backup machine,
+- connect from the root user to the backup machine's user at least once, to
+  guarantee that the public key of the backup machine is registered into
+  the root user's keyring.
+
+But you could also use RSH (it's much higher-performance in local networks).
+
+Whatever you choose, there are fine tutorials around the Web for this.
+Google is your friend.
+
+*** Test ***
+
+If all went well, you should be able to run one of these two commands from
+the machine to be backed up:
+
+- rsh -l zfsbackupuser zfsbackupmachine list
+- ssh -l zfsbackupuser zfsbackupmachine list
+
+And that should list the ZFS filesystems currently in the backup machine.
+
+*** Run ***
+
+Running it is rather simple.  Let's assume the following for an example:
+
+- Backup machine name: gabriela
+- User that runs zfsrecvsh: zfsbackup
+- Connection method: RSH
+- Local vault to back up: tank
+- Remote vault to receive tank as filesystem: backupvault
+
+The command you need to run as root on the machine to back up is:
+
+   zfs-send-vault tank rsh://zfsbackup@gabriela/backupvault
+
+If you're using SSH you can omit the rsh:// part.
+
+*** The end ***
+
+And that's it, really.  Put your zfs-send-vault into a crontab so it gets
+executed daily, and everything should be great!
+
+Comments to me through rudd-o@rudd-o.com.
+
