@@ -1,3 +1,3 @@
 #!/bin/bash
 
-scp /sbin/zfs-send-pool gabriela:/usr/local/sbin/zfsrecvsh .
+scp /sbin/zfs-shell gabriela:/usr/local/sbin/zfs-fetch-pool .
