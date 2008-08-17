@@ -19,14 +19,14 @@ os.environ["PATH"] = "/sbin:/usr/sbin:/usr/local/sbin:" + os.environ["PATH"]
 
 try:
 	local_pool = sys.argv[1]
-	m = re.findall("^(|ssh://|rsh://)([^/.]+)@(.+):(.+)$",sys.argv[2])[0]
+	m = re.findall("^(|ssh://|rsh://)([^/.]+)@(.+)/(.+)$",sys.argv[2])[0]
 	method,user,host,remote_pool = m
 	if not method: method = "ssh"
 	elif method == "ssh://": method = "ssh"
 	elif method == "rsh://": method = "rsh"
 	else: assert False
 	log("Connecting through %s as %s to %s and graft %s into %s",
-		method,user,host,local_pool,remote_pool)
+		method,user,host,remote_pool,local_pool)
 except (IndexError,ValueError), e:
 	error("usage: zfs-fetch-pool [-v] <localpool> <user@host:remotepool>")
 	sys.exit(os.EX_USAGE)
