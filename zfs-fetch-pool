@@ -63,7 +63,7 @@ def remove_snapshot(cmd,pool,name):
 
 todays_snapshot = get_todays_snapshot_name()
 
-if todays_snapshot not in get_remote_datasets()[1][remote_pool]:
+if not get_remote_datasets()[1] or todays_snapshot not in get_remote_datasets()[1][remote_pool]:
 	log("Making today's snapshot in %s"%host)
 	make_snapshot(remote_cmd,remote_pool,todays_snapshot)
 
