@@ -447,7 +447,7 @@ for srcpath in [ x.get_path() for x in source_dataset.walk() if not isinstance(x
 	elif one(ssn):
 		if no(dsn):
 			# one snapshot on the sender, none here
-			print "	s1r0: sending latest snapshot in full"%tag
+			print "	s1r0: sending latest snapshot in full"
 			if not opts.dryrun:
 				src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)))
 		else:
@@ -458,7 +458,7 @@ for srcpath in [ x.get_path() for x in source_dataset.walk() if not isinstance(x
 					src_conn.snapshot_recursively(srcpath,snapshot_unique_name)
 					src_conn.transfer(dst_conn, mksn(srcpath,snapshot_unique_name),	mksn(dstpath,snapshot_unique_name), last(ssn))
 			else:
-				print "	s1rXnomatch: destroying receiver side filesystems, sending full snapshot"%tag
+				print "	s1rXnomatch: destroying receiver side filesystems, sending full snapshot"
 				if not opts.dryrun:
 					dst_conn.destroy(dstpath)
 					src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)))
@@ -466,7 +466,7 @@ for srcpath in [ x.get_path() for x in source_dataset.walk() if not isinstance(x
 	else:
 		if no(dsn):
 			# two snapshots on the sender, none here
-			print "	s>1r0: sending latest snapshot in full"%tag
+			print "	s>1r0: sending latest snapshot in full"
 			if not opts.dryrun:
 				src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)))
 		else:
@@ -479,7 +479,7 @@ for srcpath in [ x.get_path() for x in source_dataset.walk() if not isinstance(x
 				if not opts.dryrun:
 					src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)), last(dsn))
 			else:
-				print "	s2r1nomatch: destroying receiver side filesystems, sending full snapshot"%tag
+				print "	s2r1nomatch: destroying receiver side filesystems, sending full snapshot"
 				if not opts.dryrun:
 					dst_conn.destroy(dstpath)
 					src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)))
