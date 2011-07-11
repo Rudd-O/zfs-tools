@@ -14,7 +14,7 @@ cmd="$1"
 if [ "$cmd" == "snapshot" -o "$cmd" == "list" -o "$cmd" == "recv" -o "$cmd" == "send" -o "$cmd" == "destroy" ] ; then
 	# FIXME: verify that the name of the snapshot contains an @
 	sudo zfs "$@"
-	exit 0
+	exit $?
 fi
 
 echo "usage: zfs-shell [ list | snapshot | send | recv | destroy ] <snapshotname>" >&2
