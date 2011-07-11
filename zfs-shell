@@ -2,7 +2,7 @@
 
 set -e
 
-if [ "$1" == "-c" ] ; then
+if [ "$1" == "-c" -o "$1" == "zfs" ] ; then
 	shift
 	exec "$0" $@
 fi
