@@ -44,11 +44,8 @@ if len(args) == 2:
 	try: destination_host, destination_dataset_name = args[1].split(":",1)
 	except ValueError: destination_host, destination_dataset_name = "localhost",args[1]
 else:
-	source_host = "192.168.50.63"
-	source_dataset_name = "tank/vmops"
-
-	destination_host = "localhost"
-	destination_dataset_name = "backup/storage-1"
+	sys.stderr.write("error: arguments are wrong\n%s"%parser.get_usage())
+	sys.exit(os.EX_USAGE)
 
 snapshot_prefix = opts.prefix
 snapshot_postfix = lambda: time.strftime("%Y-%m-%d-%H%M")
