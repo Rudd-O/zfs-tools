@@ -324,7 +324,7 @@ class ZFSConnection:
 		
 		if opts.progress:
 		    try: barprg = subprocess.Popen(
-			["bar","-dan","-bs",str(bufsize)],
+			["clpbar","-dan","-bs",str(bufsize)],
 			stdin=sndprg.stdout,stdout=subprocess.PIPE,bufsize=bufsize)
 		    except OSError:
 			os.kill(sndprg.pid,15)
@@ -346,7 +346,7 @@ class ZFSConnection:
 		if ret:  raise CalledProcessError(ret,["zfs","receive"])
 		if ret2: raise CalledProcessError(ret,["zfs","send"])
 		if opts.progress:
-			if ret4: raise CalledProcessError(ret,["bar"])
+			if ret4: raise CalledProcessError(ret,["clpbar"])
 		
 		dst_conn._dirty = True
 
