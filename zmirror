@@ -219,27 +219,28 @@ class PoolSet: # maybe rewrite this as a dataset or something?
 		new_dsets = [ s.split("	")[0] for s in lines ]
 		
 		for dset in new_dsets:
-			if "@" in dset: dset, snapshot = dset.split("@")
-			else: snapshot = None
-			if "/" not in dset: # pool name
-				if dset in self.pools: continue
-				self.pools[dset] = Pool(dset)
-				fs = self.pools[dset]
-				#print "	Adding %s"%fs
+			if "@" in dset:
+				dset, snapshot = dset.split("@")
 			else:
-				poolname, pathcomponents = dset.split("/")[0],dset.split("/")[1:]
-				fs = self.pools[poolname]
-				for pcomp in pathcomponents:
-					# traverse the child hierarchy or create if that fails
-					try: fs = fs.get_child(pcomp)
-					except KeyError:
-						fs = Dataset(pcomp,fs)
-						#print "	Adding %s"%fs
+				snapshot = None
+			if "/" not in dset: # pool name
+				if dset not in self.pools:
+					self.pools[dset] = Pool(dset)
+					fs = self.pools[dset]
+					#print "	Adding pool %s"%fs
+			poolname, pathcomponents = dset.split("/")[0],dset.split("/")[1:]
+			fs = self.pools[poolname]
+			for pcomp in pathcomponents:
+				# traverse the child hierarchy or create if that fails
+				try: fs = fs.get_child(pcomp)
+				except KeyError:
+					fs = Dataset(pcomp,fs)
+					#print "	Adding dataset %s"%fs
 
 			if snapshot:
 				if snapshot not in [ x.name for x in fs.children ]:
 					fs = Snapshot(snapshot,fs)
-					#print "	Adding %s"%fs
+					#print "	Adding snapshot %s"%fs
 
 		for dset in old_dsets:
 			if dset not in new_dsets:
