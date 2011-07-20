@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+import optparse
+import os
+import time
+import sets
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+from zfslib import children_first, parents_first, chronosorted
+from zfslib import Dataset, Pool, Snapshot, PoolSet, ZFSConnection
+
+#===================== configuration =====================
+
+parser = optparse.OptionParser("usage: %prog [-k NUMSNAPS] <datasetname>")
+parser.add_option('-k', '--keep', action='store', dest='keep', default=7, help='how many snapshots to keep (default: %default)')
+parser.add_option('-p', '--prefix', action='store', dest='prefix', default="autosnapshot-", help='prefix to prepend to snapshot names (default: %default)')
+parser.add_option('-t', '--timeformat', action='store', dest='timeformat', default="%Y-%m-%d-%H%M%S", help='postfix time format to append to snapshot names (default: %default, MUST be sortable using a general sort)')
+opts,args = parser.parse_args(sys.argv[1:])
+
+try:
+	keep = int(opts.keep)
+	assert keep >= 1
+except (ValueError,AssertionError),e:
+	sys.stderr.write("error: keep must be greater than 1\n%s"%parser.get_usage())
+	sys.exit(os.EX_USAGE)
+
+if len(args) == 1:
+	try: source_host, source_dataset_name = args[0].split(":",1)
+	except ValueError: source_host, source_dataset_name = "localhost",args[0]
+else:
+	sys.stderr.write("error: arguments are wrong\n%s"%parser.get_usage())
+	sys.exit(os.EX_USAGE)
+
+snapshot_prefix = opts.prefix
+snapshot_postfix = lambda: time.strftime(timeformat)
+
+#===================== end configuration =================
+
+# ================ start program algorithm ===================
+
+src_conn = ZFSConnection(source_host)
+snapshot_unique_name = snapshot_prefix + snapshot_postfix()
+flt = lambda x: x.name.startswith(snapshot_prefix)
+
+print "Assessing that the specified dataset exists...",
+try:
+	source_dataset = src_conn.pools.lookup(source_dataset_name)
+	print "%s: OK"%source_dataset
+except KeyError:
+	print "No.\nError: the source dataset does not exist.  Snapshot cannot continue"
+	sys.exit(2)
+
+print "Snapshotting dataset %s:%s"%(source_host,source_dataset_name)
+
+src_conn.snapshot_recursively(source_dataset_name,snapshot_unique_name)
+src_conn.pools # trigger update
+
+ssn = chronosorted([ (x.name,x) for x in source_dataset.get_snapshots(flt) ])
+
+for x in ssn[:-keep]:
+	print "Destroying obsolete snapshot: %s"%(x[1].get_path())
+	src_conn.destroy(x[1].get_path())
