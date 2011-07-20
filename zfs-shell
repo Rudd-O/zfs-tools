@@ -11,7 +11,7 @@ export PATH=/sbin:/usr/sbin:/usr/local/sbin:"$PATH"
 
 cmd="$1"
 
-if [ "$cmd" == "snapshot" -o "$cmd" == "list" -o "$cmd" == "recv" -o "$cmd" == "send" -o "$cmd" == "destroy" ] ; then
+if [ "$cmd" == "snapshot" -o "$cmd" == "list" -o "$cmd" == "recv" -o "$cmd" == "send" -o "$cmd" == "destroy" -o "$cmd" == "get" ] ; then
 	# FIXME: verify that the name of the snapshot contains an @
 	sudo zfs "$@"
 	exit $?
