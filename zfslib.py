@@ -127,6 +127,9 @@ class Dataset:
 		return "<Dataset:  %s>"%self.get_path()
 	__repr__ = __str__
 
+	def get_creation(self):
+		return self._creation
+
 
 class Pool(Dataset):
 	def __str__(self):
@@ -174,12 +177,14 @@ class PoolSet: # maybe rewrite this as a dataset or something?
 
 		return dset
 
-	def parse_zfs_r_output(self,output):
+	def parse_zfs_r_output(self,output,creationtimes):
 
 		#print "***Parsing ZFS output***"
 
 		# make into array
 		lines = [ s.strip() for s in output.splitlines() ]
+
+		creations = dict([ s.strip().split("	") for s in creationtimes.splitlines() if s.strip() ])
 
 		# names of pools
 		old_dsets = [ x.get_path() for x in self.walk() ]
@@ -209,6 +214,8 @@ class PoolSet: # maybe rewrite this as a dataset or something?
 				if snapshot not in [ x.name for x in fs.children ]:
 					fs = Snapshot(snapshot,fs)
 					#print "	Adding snapshot %s"%fs
+
+			fs._creation = creations[fs.get_path()]
 
 		for dset in old_dsets:
 			if dset not in new_dsets:
@@ -256,7 +263,8 @@ class ZFSConnection:
 	def _get_poolset(self):
 		if self._dirty:
 			stdout,stderr = run_command(self.command+["list","-r","-t","all","-H"])
-			self._poolset.parse_zfs_r_output(stdout)
+			stdout2,stderr2 = run_command(self.command+["get","-r","-o","name,value","creation","-Hp"])
+			self._poolset.parse_zfs_r_output(stdout,stdout2)
 			self._dirty = False
 		return self._poolset
 	pools = property(_get_poolset)

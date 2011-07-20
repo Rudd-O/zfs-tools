@@ -70,17 +70,17 @@ else:
 print ""
 
 
-ssn = chronosorted([ (x.name,x) for x in source_dataset.get_snapshots(lambda _: True) ]) # Source 
-latest_source_snapshot_name = ssn[-1][0]
+ssn = chronosorted([ (x.get_creation(),x) for x in source_dataset.get_snapshots(lambda _: True) ])
+latest_source_snapshot_name = ssn[-1][1].name
 latest_source_snapshot = ssn[-1][1].get_path()
 
-dsn = chronosorted([ (x.name,x) for x in destination_dataset.get_snapshots(lambda _: True) ]) # Destination
+dsn = chronosorted([ (x.get_creation(),x) for x in destination_dataset.get_snapshots(lambda _: True) ])
 try:
-	common = sets.Set([ x[0] for x in ssn])
-	common = common.intersection(sets.Set([ x[0] for x in dsn]))
-	common = chronosorted(common)
-	latest_destination_snapshot_name = common[-1]
-	latest_destination_snapshot = dict(dsn)[latest_destination_snapshot_name]
+	common = sets.Set([ x[1].name for x in ssn ]) and sets.Set([ x[1].name for x in dsn ])
+	common = [ destination_dataset.get_child(x) for x in common ]
+	common = chronosorted([ (x.get_creation(), x) for x in common ])
+	latest_destination_snapshot_name = common[-1][1].name
+	latest_destination_snapshot = common[-1][1].get_path()
 	full = False
 except IndexError:
 	full = True
@@ -90,12 +90,20 @@ receive_opts = []
 if opts.dryrun: receive_opts.append("-n")
 
 if full:
+	print "No matching destination snapshots, transferring full replication stream"
+
 	src_conn.transfer(dst_conn, latest_source_snapshot,destination_dataset_name,showprogress=opts.progress,bufsize=bufsize,send_opts=send_opts,receive_opts=receive_opts)
 	
 elif latest_destination_snapshot_name == latest_source_snapshot_name:
+	print "Latest source snapshot: %s"%latest_source_snapshot_name
+	print "Latest destination snapshot: %s"%latest_destination_snapshot_name
 	print "Snapshots are up to date, exiting"
 	
 else: #incremental
+	print "Latest source snapshot: %s"%latest_source_snapshot_name
+	print "Latest destination snapshot: %s"%latest_destination_snapshot_name
+	print "Transferring differential replication stream"
+
 	send_opts.append("-I")
 	send_opts.append(latest_destination_snapshot_name)
 	
