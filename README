@@ -5,7 +5,10 @@ Use new zfslib get_creation() support for datasets in zmirror and zsnap.
 ===============READ ME==============
 
 The ZFS backup tools will help you graft an entire ZFS pool as a filesystem
-into a backup machine.  Two utilities do this:
+into a backup machine, without having to screw around snapshot names or
+complicated shell commands or crontabs.
+
+The utilities let you do this:
 
 1. zfs-shell:
    a shell that allows remote ZFS administration and nothing more
