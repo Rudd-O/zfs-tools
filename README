@@ -2,23 +2,34 @@
 Use new zfslib get_creation() support for datasets in zmirror and zsnap.
 
 
-
-=============OUTDATED===============
+===============READ ME==============
 
 The ZFS backup tools will help you graft an entire ZFS pool as a filesystem
-into a backup machine, every day.  Two utilities do this:
+into a backup machine.  Two utilities do this:
 
 1. zfs-shell:
-   a shell that allows remote ZFS administration
+   a shell that allows remote ZFS administration and nothing more
 
-2. zfs-fetch-pool:
-   a command that snapshots, then fetches a pool from a machine with zfs-shell
+2. zmirror:
+   a command that snapshots a dataset or pool, then sends the snapshots,
+   dataset by dataset, to another machine, without using replication streams.
+   It will delete obsolete snapshots on the source and destination machines,
+   keeping a maximum of one snapshot tree on each machine.  It will not
+   delete snapshots indiscriminately, though -- it will only delete snapshots
+   prefixed with zmirror-.
 
-What they actually do is rather simple:
+3. zsnap:
+   a command that snapshots a dataset or pool, then deletes old snapshots
 
-- zfs-fetch-pool remotely snapshots the pool on the machine with zfs-shell
-- then, zfs-fetch-pool fetches the snapshot incrementally from the machine
-- finally, zfs-fetch-pool removes old snapshots it created earlier for its use
+4. zreplicate
+   a command that replicates an entire dataset tree using ZFS replication
+   streams.  Best used in combination with zsnap as in:
+
+   a) zsnap on the local machine
+   b) zreplicate from the local machine to the destination machine
+
+   Obsolete snapshots deleted by zsnap will be automatically purged on
+   the destination machine by zreplicate.
 
 *** Setting up ***
 
@@ -40,63 +51,66 @@ will be receiving the backup.
   zfs ALL = NOPASSWD: /usr/local/sbin/zfs
   (ensure you remove the requiretty default on /etc/sudoers)
 
+- Set up a cron job to use zsnap as frequently as you want to
+  specifying the dataset you intend to replicate.
+
 *** On the backup machine ***
 
-- Install zfs-fetch-pool
-  cp zfs-fetch-pool /usr/local/sbin
-  chmod 755 /usr/local/sbin/zfs-fetch-pool
-  chown root.root /usr/local/sbin/zfs-fetch-pool
+- Set up public key authentication for SSH so the backup machine
+  may log as the user zfs (as laid out above) in the machine to
+  be backed up.
 
-*** Set up authentication ***
+- Create a dataset to receive the backup stream.
 
-Now you need to set authentication up.  The goal is to let the backup machine
-connect as the newly created user in the machine to back up.
+- Set up a cron job to fetch the dataset snapshotted by zsnap
+  from the remote machine into the newly created dataset.  You
+  will use zreplicate for that (see below for examples).
 
-If you're going to use SSH, your best bet is to:
-
-- enable PubkeyAuthentication in the machine to back up,
-- generate a private/public key pair for the root user of the backup machine
-- add the public key into the newly created user of the machine to back up,
-- connect from the root user in the backup machine to the newly created
-  user in the machine to back up (at least one time), to
-  guarantee that the public key of the machine to back up is
-  registered into the root user's keyring of the backup machine.
-
-But you could also use RSH (it's much higher-performance in local networks).
-
-Whatever you choose, there are fine tutorials around the Web for this.
-Google is your friend.
+- After the first replication, you may want to set the mountpoint
+  attributes on the received datasets so they do not automount
+  on the backup machine.
 
 *** Test ***
 
-If all went well, you should be able to run one of these two commands from
-the backup machine just fine (assuming that the new user is zfs):
+If all went well, you should be able to do this without issue:
 
-- rsh -l zfs machine-to-back-up list
-- ssh -l zfs machine-to-back-up list
+(on the machine to back up)
 
-And that should list the ZFS filesystems currently in the backup machine.
+    [root@peter]
+    zsnap senderpool
 
-*** Run ***
+(on the machine to receive)
 
-Running it is rather simple.  Let's assume the following for an example:
+    [root@paul]
+    zfs create receiverpool/senderpool # <--- run this ONLY ONCE
+    zreplicate -o zfs@paul:senderpool receiverpool/senderpool
+    # this should send the entire senderpool with all snapshots
+    # over from peter to paul, placing it in receiverpool/senderpool
 
-- Machine to back up: karen
-- New user on that machine: zfs
-- Connection method: RSH
-- Vault to back up: tank
-- Vault to receive tank in the backup machine: backupvault
+(on the machine to back up)
 
-The command you need to run as root on the backup machine is:
+    [root@peter]
+    zsnap senderpool
 
-    zfs-fetch-vault rsh://karen@gabriela/tank vault
+(on the machine to receive)
 
-If you're using SSH you can omit the rsh:// part.
+    [root@paul]
+    zreplicate -o zfs@paul:senderpool receiverpool/senderpool
+    # this should send an incremental stream of senderpool
+    # into receiverpool/senderpool
 
-*** The end ***
-
-And that's it, really.  Put your zfs-fetch-vault into a crontab so it gets
-executed daily, and everything should be great!
+And that's it, really.
 
 Comments to me through rudd-o@rudd-o.com.
 
+*** zmirror ***
+
+Zmirror is an useful command that does not replicate a dataset tree and
+all of its snapshots, but rather only replicates dataset by dataset
+(still recursively, but breaking the logical references between datasets)
+and only keeps the latest snapshot.  This can be useful in the case that
+you do not have as much disk space on the receiving pool as you have on
+the source pool.  It, however, will not respect deduplication, clones or
+copy-on-write, so there's that.  It is old code that I was using before
+I figured out how to effectively use replication streams in lieu of simple
+dataset sends and receives.
