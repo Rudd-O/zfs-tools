@@ -17,5 +17,5 @@ if [ "$cmd" == "snapshot" -o "$cmd" == "list" -o "$cmd" == "recv" -o "$cmd" == "
 	exit $?
 fi
 
-echo "usage: zfs-shell [ list | snapshot | send | recv | destroy ] <snapshotname>" >&2
+echo "usage: zfs-shell [ list | snapshot | send | recv | destroy | get ] <snapshotname>" >&2
 exit 64
