@@ -33,7 +33,7 @@ else:
 	sys.exit(os.EX_USAGE)
 
 snapshot_prefix = opts.prefix
-snapshot_postfix = lambda: time.strftime(timeformat)
+snapshot_postfix = lambda: time.strftime(opts.timeformat)
 
 #===================== end configuration =================
 

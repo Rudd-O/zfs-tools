@@ -286,10 +286,13 @@ class ZFSConnection:
 		p = subprocess.Popen(cmd,stdin=pipe,stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
-	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False,bufsize=-1):
+	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False,bufsize=-1,send_opts=None,receive_opts=None):
+		if send_opts is None: send_opts = []
+		if receive_opts is None: receive_opts = []
+		
 		if fromsnapshot: fromsnapshot=["-i",fromsnapshot]
 		else: fromsnapshot = []
-		sndprg = src_conn.send(s,opts=["-v"]+fromsnapshot)
+		sndprg = src_conn.send(s,opts=["-v"]+fromsnapshot+send_opts)
 		
 		if showprogress:
 		    barargs = []
@@ -303,7 +306,7 @@ class ZFSConnection:
 			raise
 		else:
 			barprg = sndprg
-		try: rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-vFu"])
+		try: rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-vFu"]+receive_opts)
 		except OSError:
 			os.kill(sndprg.pid,15)
 			os.kill(barprg.pid,15)
