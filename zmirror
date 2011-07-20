@@ -4,6 +4,8 @@
 import sys
 import optparse
 import os
+import time
+import sets
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from zfslib import children_first, parents_first, chronosorted
 from zfslib import Dataset, Pool, Snapshot, PoolSet, ZFSConnection
@@ -120,39 +122,39 @@ for srcpath in [ x.get_path() for x in source_dataset.walk() if not isinstance(x
 			print "	s0r0: snapshotting and sending full snapshot"
 			if not opts.dryrun:
 				src_conn.snapshot_recursively(srcpath,snapshot_unique_name)
-				src_conn.transfer(dst_conn, mksn(srcpath,snapshot_unique_name), mksn(dstpath,snapshot_unique_name),showprogress=opts.progress)
+				src_conn.transfer(dst_conn, mksn(srcpath,snapshot_unique_name), mksn(dstpath,snapshot_unique_name),showprogress=opts.progress,bufsize=bufsize)
 		else:
 			print "	s0r>0: destroying receiver side filesystems, snapshotting and sending full snapshot"
 			if not opts.dryrun:
 				dst_conn.destroy(dstpath)
 				src_conn.snapshot_recursively(srcpath,snapshot_unique_name)
-				src_conn.transfer(dst_conn, mksn(srcpath,snapshot_unique_name), mksn(dstpath,snapshot_unique_name),showprogress=opts.progress)
+				src_conn.transfer(dst_conn, mksn(srcpath,snapshot_unique_name), mksn(dstpath,snapshot_unique_name),showprogress=opts.progress,bufsize=bufsize)
 
 	elif one(ssn):
 		if no(dsn):
 			# one snapshot on the sender, none here
 			print "	s1r0: sending latest snapshot in full"
 			if not opts.dryrun:
-				src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)),showprogress=opts.progress)
+				src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)),showprogress=opts.progress,bufsize=bufsize)
 		else:
 			if last(ssn) == last(dsn):
 				# matching snapshots on both sides
 				print "	s1rXmatch: snapshotting and sending incremental snapshot"
 				if not opts.dryrun:
 					src_conn.snapshot_recursively(srcpath,snapshot_unique_name)
-					src_conn.transfer(dst_conn, mksn(srcpath,snapshot_unique_name),	mksn(dstpath,snapshot_unique_name), last(ssn),showprogress=opts.progress)
+					src_conn.transfer(dst_conn, mksn(srcpath,snapshot_unique_name),	mksn(dstpath,snapshot_unique_name), last(ssn),showprogress=opts.progress,bufsize=bufsize)
 			else:
 				print "	s1rXnomatch: destroying receiver side filesystems, sending full snapshot"
 				if not opts.dryrun:
 					dst_conn.destroy(dstpath)
-					src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)),showprogress=opts.progress)
+					src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)),showprogress=opts.progress,bufsize=bufsize)
 
 	else:
 		if no(dsn):
 			# two snapshots on the sender, none here
 			print "	s>1r0: sending latest snapshot in full"
 			if not opts.dryrun:
-				src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)),showprogress=opts.progress)
+				src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)),showprogress=opts.progress,bufsize=bufsize)
 		else:
 			if last(ssn) == last(dsn):
 				# latest matching snapshots on both sides
@@ -161,12 +163,12 @@ for srcpath in [ x.get_path() for x in source_dataset.walk() if not isinstance(x
 				# two snapshots on the sender, the old one matching here
 				print "	s>1rXmatch: sending incremental snapshot"
 				if not opts.dryrun:
-					src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)), last(dsn),showprogress=opts.progress)
+					src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)), last(dsn),showprogress=opts.progress,bufsize=bufsize)
 			else:
 				print "	s2r1nomatch: destroying receiver side filesystems, sending full snapshot"
 				if not opts.dryrun:
 					dst_conn.destroy(dstpath)
-					src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)),showprogress=opts.progress)
+					src_conn.transfer(dst_conn, mksn(srcpath,last(ssn)), mksn(dstpath,last(ssn)),showprogress=opts.progress,bufsize=bufsize)
 
 	backed_up_datasets.add(dstpath)
 	print ""

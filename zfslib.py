@@ -274,26 +274,29 @@ class ZFSConnection:
 		run_command(self.command+["snapshot","-r","%s@%s"%(name,snapshotname)])
 		self._dirty = True
 
-	def send(self,name,opts=None):
+	def send(self,name,opts=None,bufsize=-1):
 		if not opts: opts = []
 		cmd = self.command + ["send"] + opts + [name]
 		p = subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
-	def receive(self,name,pipe,opts=None):
+	def receive(self,name,pipe,opts=None,bufsize=-1):
 		if not opts: opts = []
 		cmd = self.command + ["receive"] + opts + [name]
 		p = subprocess.Popen(cmd,stdin=pipe,stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
-	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False):
+	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False,bufsize=-1):
 		if fromsnapshot: fromsnapshot=["-i",fromsnapshot]
 		else: fromsnapshot = []
 		sndprg = src_conn.send(s,opts=["-v"]+fromsnapshot)
 		
 		if showprogress:
+		    barargs = []
+		    if bufsize != -1:
+			barargs = ["-bs",str(bufsize)]
 		    try: barprg = subprocess.Popen(
-			["clpbar","-dan","-bs",str(bufsize)],
+			["clpbar","-dan"] + barargs,
 			stdin=sndprg.stdout,stdout=subprocess.PIPE,bufsize=bufsize)
 		    except OSError:
 			os.kill(sndprg.pid,15)
