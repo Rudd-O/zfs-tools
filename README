@@ -1,3 +1,10 @@
+===============TODO=================
+Use new zfslib get_creation() support for datasets in zmirror and zsnap.
+
+
+
+=============OUTDATED===============
+
 The ZFS backup tools will help you graft an entire ZFS pool as a filesystem
 into a backup machine, every day.  Two utilities do this:
 
