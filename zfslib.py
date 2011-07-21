@@ -114,7 +114,7 @@ class Dataset:
 		return self.get_path()[len(self.parent.get_path())+1:]
 
 	def walk(self):
-		if self.invalidated: raise Exception, "%s invalidated"%self
+		assert not self.invalidated, "%s invalidated"%self
 		yield self
 		for c in self.children:
 			for element in c.walk():
@@ -285,12 +285,14 @@ class ZFSConnection:
 	def send(self,name,opts=None,bufsize=-1):
 		if not opts: opts = []
 		cmd = self.command + ["send"] + opts + [name]
+		print "Executing command",cmd
 		p = subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
 	def receive(self,name,pipe,opts=None,bufsize=-1):
 		if not opts: opts = []
 		cmd = self.command + ["receive"] + opts + [name]
+		print "Executing command",cmd
 		p = subprocess.Popen(cmd,stdin=pipe,stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
