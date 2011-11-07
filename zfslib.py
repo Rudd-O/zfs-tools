@@ -285,14 +285,14 @@ class ZFSConnection:
 	def send(self,name,opts=None,bufsize=-1):
 		if not opts: opts = []
 		cmd = self.command + ["send"] + opts + [name]
-		print "Executing command",cmd
+		# print "Executing command",cmd
 		p = subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
 	def receive(self,name,pipe,opts=None,bufsize=-1):
 		if not opts: opts = []
 		cmd = self.command + ["receive"] + opts + [name]
-		print "Executing command",cmd
+		# print "Executing command",cmd
 		p = subprocess.Popen(cmd,stdin=pipe,stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
@@ -302,7 +302,7 @@ class ZFSConnection:
 		
 		if fromsnapshot: fromsnapshot=["-i",fromsnapshot]
 		else: fromsnapshot = []
-		sndprg = src_conn.send(s,opts=["-v"]+fromsnapshot+send_opts)
+		sndprg = src_conn.send(s,opts=[]+fromsnapshot+send_opts)
 		
 		if showprogress:
 		    barargs = []
@@ -316,7 +316,7 @@ class ZFSConnection:
 			raise
 		else:
 			barprg = sndprg
-		try: rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-vFu"]+receive_opts)
+		try: rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts)
 		except OSError:
 			os.kill(sndprg.pid,15)
 			os.kill(barprg.pid,15)
@@ -334,3 +334,8 @@ class ZFSConnection:
 			if ret4: raise CalledProcessError(ret,["clpbar"])
 		
 		dst_conn._dirty = True
+
+def stderr(text):
+	"""print out something to standard error, followed by an ENTER"""
+	sys.stderr.write(text)
+	sys.stderr.write("\n")
