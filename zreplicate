@@ -92,14 +92,6 @@ try:
 except IndexError:
 	full = True
 
-if not full:
-	source_dataset.get_child(base_snapshot_name)	
-	for x in destination_dataset.walk():
-		if isinstance(x,Snapshot): continue # we do not examine snapshots
-		m = [ y for y in x.children if isinstance(y,Snapshot) ]
-		if not m: continue # we forgive if a dataset is completely empty and does not have any snapshot children
-		x.get_child(base_snapshot_name)
-
 
 send_opts = ["-R"]
 receive_opts = []
