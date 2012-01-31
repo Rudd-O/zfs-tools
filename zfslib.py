@@ -311,9 +311,17 @@ class ZFSConnection:
 		    try: barprg = subprocess.Popen(
 			["clpbar","-dan"] + barargs,
 			stdin=sndprg.stdout,stdout=subprocess.PIPE,bufsize=bufsize)
-		    except OSError:
-			os.kill(sndprg.pid,15)
-			raise
+		    except OSError, e:
+			if e.errno == 2:
+		            try: barprg = subprocess.Popen(
+			        ["bar","-dan"] + barargs,
+			        stdin=sndprg.stdout,stdout=subprocess.PIPE,bufsize=bufsize)
+		            except OSError:
+			        os.kill(sndprg.pid,15)
+			        raise
+			else:
+			        os.kill(sndprg.pid,15)
+				raise
 		else:
 			barprg = sndprg
 		try: rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts)
