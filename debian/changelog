@@ -1,0 +1,29 @@
+zfs-tools (0.1.1ubuntu3) lucid; urgency=low
+
+  * Make it add user name, group name, and sudoers enrollment
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Tue, 01 May 2012 00:29:53 +0000
+
+zfs-tools (0.1.1ubuntu2) lucid; urgency=low
+
+  * Made it build correctly and install correctly
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Tue, 01 May 2012 00:13:41 +0000
+
+zfs-tools (0.1.1ubuntu1) lucid; urgency=low
+
+  * Added correct section to package
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Mon, 30 Apr 2012 23:13:45 +0000
+
+zfs-tools (0.1.1) lucid; urgency=low
+
+  * Adapted to lucid.
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Mon, 30 Apr 2012 22:02:22 +0000
+
+zfs-tools (0.1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Mon, 30 Apr 2012 22:00:22 +0000

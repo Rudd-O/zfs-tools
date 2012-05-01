@@ -1,0 +1,12 @@
+Source: zfs-tools
+Section: admin
+Priority: extra
+Maintainer: Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>
+Build-Depends: debhelper (>= 7), python
+Standards-Version: 3.8.3
+Homepage: https://github.com/Rudd-O/zfs-tools
+
+Package: zfs-tools
+Architecture: all
+Depends: ${misc:Depends}, ubuntu-zfs
+Description: A collection of tools for ZFS

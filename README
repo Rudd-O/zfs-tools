@@ -1,7 +1,3 @@
-===============TODO=================
-Use new zfslib get_creation() support for datasets in zmirror and zsnap.
-
-
 ===============READ ME==============
 
 The ZFS backup tools will help you graft an entire ZFS pool as a filesystem

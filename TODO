@@ -1,3 +1,5 @@
 Make this into a ZFS project for Fedora and stuff
 make zreplicate gain an option to delete snapshots in the target that do not exist in the source anymore
-Rename to ZFS-tools, and under the same project umbrella, publish built RPMs of the stuff
+Publish built RPMs of the stuff
+Use new zfslib get_creation() support for datasets in zmirror and zsnap.
+
