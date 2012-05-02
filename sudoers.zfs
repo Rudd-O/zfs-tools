@@ -1,1 +1,1 @@
-zfs ALL = NOPASSWD: /usr/bin/zfs
+zfs ALL = NOPASSWD: /sbin/zfs
