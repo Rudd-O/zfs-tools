@@ -258,7 +258,7 @@ class ZFSConnection:
 		if host in ['localhost','127.0.0.1']:
 			self.command = ["zfs"]
 		else:
-			self.command = ["ssh","-o","BatchMode yes","-c","arcfour",self.host,"zfs"]
+			self.command = ["ssh","-o","BatchMode yes","-a","-x","-c","arcfour",self.host,"zfs"]
 
 	def _get_poolset(self):
 		if self._dirty:
