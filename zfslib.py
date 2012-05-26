@@ -286,14 +286,14 @@ class ZFSConnection:
 		if not opts: opts = []
 		cmd = self.command + ["send"] + opts + [name]
 		# print "Executing command",cmd
-		p = subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,bufsize=bufsize)
+		p = subprocess.Popen(cmd,stdin=file(os.devnull,"r"),stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
 	def receive(self,name,pipe,opts=None,bufsize=-1):
 		if not opts: opts = []
 		cmd = self.command + ["receive"] + opts + [name]
 		# print "Executing command",cmd
-		p = subprocess.Popen(cmd,stdin=pipe,stdout=subprocess.PIPE,bufsize=bufsize)
+		p = subprocess.Popen(cmd,stdin=pipe,stdout=file(os.devnull,"w"),bufsize=bufsize)
 		return p
 
 	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False,bufsize=-1,send_opts=None,receive_opts=None):
@@ -330,14 +330,14 @@ class ZFSConnection:
 			os.kill(barprg.pid,15)
 			raise
 
-		ret = rcvprg.wait()
+		ret = sndprg.wait()
 		if ret:
-			os.kill(sndprg.pid,15)
+			os.kill(rcvprg.pid,15)
 			if showprogress: os.kill(barprg.pid,15)
-		ret2 = sndprg.wait()
+		ret2 = rcvprg.wait()
 		if showprogress: ret4 = barprg.wait()
-		if ret:  raise CalledProcessError(ret,["zfs","receive"])
-		if ret2: raise CalledProcessError(ret,["zfs","send"])
+		if ret:  raise CalledProcessError(ret,["zfs","send"])
+		if ret2: raise CalledProcessError(ret,["zfs","receive"])
 		if showprogress:
 			if ret4: raise CalledProcessError(ret,["clpbar"])
 		
