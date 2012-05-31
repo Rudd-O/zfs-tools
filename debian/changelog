@@ -1,9 +1,15 @@
+zfs-tools (0.1.5ubuntu1) lucid; urgency=low
+
+  * Wait for the sending program before wait for the receiving program to end
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Sat, 26 May 2012 00:36:46 +0000
+
 zfs-tools (0.1.4ubuntu1) lucid; urgency=low
 
   * Cleared all SSH forwardings to prevent SSH from hanging at the end of long
     send and receives
 
- -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Mon, 07 May 2012 18:03:45 +0000
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Sat, 26 May 2012 00:36:46 +0000
 
 zfs-tools (0.1.3ubuntu1) lucid; urgency=low
 
