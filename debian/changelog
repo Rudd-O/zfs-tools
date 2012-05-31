@@ -1,3 +1,10 @@
+zfs-tools (0.1.6ubuntu1) lucid; urgency=low
+
+  * Fix deadlock in command executions that write a lot of data to standard
+    output or standard error (python subprocess bug)
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Thu, 31 May 2012 20:16:40 +0000
+
 zfs-tools (0.1.5ubuntu1) lucid; urgency=low
 
   * Wait for the sending program before wait for the receiving program to end
