@@ -7,6 +7,8 @@ import os
 import sets
 import time
 import optparse
+import threading
+import signal
 
 # solaris doesn't have python 2.5, we copy code from the Python library this as a compatibility measure
 try: from subprocess import CalledProcessError
@@ -27,19 +29,37 @@ def parents_first(pathlist): return sorted(pathlist,key=lambda x:x.count("/"))
 chronosorted = sorted
 
 def run_command(cmd,inp=None,capture_stderr=False):
-	if capture_stderr:
-		p = subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-	else:
-		p = subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+        if capture_stderr:
+                p = subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        else:
+                p = subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 
-	if inp:	stdout,stderr = p.communicate(inp)
-	else:	stdout,stderr = p.communicate()
+        # work around the stupidest python bug
+        stdout = []
+        stderr = []
+        def read(pipe,chunk_accumulator):
+                while True:
+                        chunk = pipe.read()
+                        if chunk == "": break
+                        chunk_accumulator.append(chunk)
+        soreader = threading.Thread(target=read,args=(p.stdout,stdout))
+        soreader.setDaemon(True)
+        soreader.start()
+        if capture_stderr:
+                sereader = threading.Thread(target=read,args=(p.stderr,stderr))
+                sereader.setDaemon(True)
+                sereader.start()
 
-	exit = p.wait()
-	if exit != 0:
-		c = CalledProcessError(exit,cmd)
-		raise c
-	return stdout,stderr
+        if inp: p.stdin.write(inp)
+
+        exit = p.wait()
+        soreader.join()
+        if capture_stderr:
+                sereader.join()
+        if exit != 0:
+                c = CalledProcessError(exit,cmd)
+                raise c
+        return ''.join(stdout),''.join(stderr)
 
 
 class Dataset:
