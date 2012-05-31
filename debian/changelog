@@ -1,3 +1,9 @@
+zfs-tools (0.1.7ubuntu1) lucid; urgency=low
+
+  * Add support for rate-limiting through clpbar
+
+ -- Manuel Amador <manuel@example.org>  Thu, 31 May 2012 22:48:58 +0000
+
 zfs-tools (0.1.6ubuntu1) lucid; urgency=low
 
   * Fix deadlock in command executions that write a lot of data to standard
