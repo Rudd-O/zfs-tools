@@ -13,8 +13,9 @@ from zfslib import stderr
 
 #===================== configuration =====================
 
-parser = optparse.OptionParser("usage: %prog [-on] [-b BUFSIZE] <srcdatasetname> <dstdatasetname>")
+parser = optparse.OptionParser("usage: %prog [-onv] [-b BUFSIZE] [-l RATELIMIT] <srcdatasetname> <dstdatasetname>")
 parser.add_option('-o', '--progress', action='store_true', dest='progress', default=False, help='show progress (depends on the executabilty of the \'bar\' program) (default: %default)')
+parser.add_option('-l', '--rate-limit', action='store', dest='ratelimit', default=-1, type="int", help='rate limit in bytes per second (requires --progress) (default: %default which means no limit)')
 parser.add_option('-n', '--dry-run', action='store_true', dest='dryrun', default=False, help='don\'t actually manipulate any file systems')
 parser.add_option('-b', '--bufsize', action='store', dest='bufsize', default=1048576, help='buffer size in bytes for network operations (default: %default)')
 parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='be verbose (default: %default)')
@@ -33,6 +34,12 @@ if len(args) == 2:
 	except ValueError: destination_host, destination_dataset_name = "localhost",args[1]
 else:
 	parser.error("error: arguments are wrong")
+
+if opts.ratelimit != -1:
+    if opts.ratelimit < 1024:
+        parser.error("error: rate limit (%s) must be higher than 1024 bytes per second"%opts.ratelimit)
+    if not opts.progress:
+        parser.error("error: to apply a rate limit, you must specify --progress too")
 
 def verbose_stderr(*args,**kwargs):
 	if opts.verbose: stderr(*args,**kwargs)
@@ -104,7 +111,7 @@ if opts.verbose:
 if full:
 	verbose_stderr("No matching destination snapshots, transferring full replication stream")
 
-	src_conn.transfer(dst_conn, target_snapshot,destination_dataset_name,showprogress=opts.progress,bufsize=bufsize,send_opts=send_opts,receive_opts=receive_opts)
+	src_conn.transfer(dst_conn, target_snapshot,destination_dataset_name,showprogress=opts.progress,ratelimit=opts.ratelimit,bufsize=bufsize,send_opts=send_opts,receive_opts=receive_opts)
 	
 elif target_snapshot_name == base_snapshot_name:
 	verbose_stderr("Base snapshot to reference in destination: %s" % base_snapshot_name)
@@ -119,7 +126,7 @@ else: #incremental
 	send_opts.append("-I")
 	send_opts.append(base_snapshot_name)
 	
-	src_conn.transfer(dst_conn, target_snapshot,destination_dataset_name,showprogress=opts.progress,bufsize=bufsize,send_opts=send_opts,receive_opts=receive_opts)
+	src_conn.transfer(dst_conn, target_snapshot,destination_dataset_name,showprogress=opts.progress,ratelimit=opts.ratelimit,bufsize=bufsize,send_opts=send_opts,receive_opts=receive_opts)
 
 src_conn.pools
 dst_conn.pools

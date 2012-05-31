@@ -316,7 +316,7 @@ class ZFSConnection:
 		p = subprocess.Popen(cmd,stdin=pipe,stdout=file(os.devnull,"w"),bufsize=bufsize)
 		return p
 
-	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False,bufsize=-1,send_opts=None,receive_opts=None):
+	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False,bufsize=-1,send_opts=None,receive_opts=None,ratelimit=-1):
 		if send_opts is None: send_opts = []
 		if receive_opts is None: receive_opts = []
 		
@@ -328,6 +328,8 @@ class ZFSConnection:
 		    barargs = []
 		    if bufsize != -1:
 			barargs = ["-bs",str(bufsize)]
+                    if ratelimit != -1:
+                        barargs = barargs + ['-th',str(ratelimit)]
 		    try: barprg = subprocess.Popen(
 			["clpbar","-dan"] + barargs,
 			stdin=sndprg.stdout,stdout=subprocess.PIPE,bufsize=bufsize)
