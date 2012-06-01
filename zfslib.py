@@ -4,7 +4,6 @@
 import sys
 import subprocess
 import os
-import sets
 import time
 import optparse
 import threading
