@@ -313,7 +313,7 @@ class ZFSConnection:
 		if not opts: opts = []
 		cmd = self.command + ["receive"] + opts + [name]
 		# print "Executing command",cmd
-		p = subprocess.Popen(cmd,stdin=pipe,stdout=file(os.devnull,"w"),bufsize=bufsize)
+		p = subprocess.Popen(cmd,stdin=pipe,bufsize=bufsize)
 		return p
 
 	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False,bufsize=-1,send_opts=None,receive_opts=None,ratelimit=-1):
