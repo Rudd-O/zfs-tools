@@ -201,17 +201,17 @@ def optimize(operation_schedule):
         # first step is to build a dictionary of operations
         # grouped by source snapshot name and destination snapshot name
         operations_by_srcsnap_to_dstsnap = {}
-        full_operations = {}
+        operations_by_dstsnap = {}
         for op,src,dst,srcs,dsts in filter(lambda x: x[0] == 'incremental', sched):
             srcname = src.get_path()
             opsummary = srcs.name + "->" + dsts.name
             if opsummary not in operations_by_srcsnap_to_dstsnap: operations_by_srcsnap_to_dstsnap[opsummary] = []
             operations_by_srcsnap_to_dstsnap[opsummary].append((op,src,dst,srcs,dsts))
-        for op,src,dst,srcs,dsts in filter(lambda x: x[0] == 'full', sched):
+        for op,src,dst,srcs,dsts in sched:
             srcname = src.get_path()
             opsummary = dsts.name
-            if opsummary not in full_operations: full_operations[opsummary] = []
-            full_operations[opsummary].append((op,src,dst,srcs,dsts))
+            if opsummary not in operations_by_dstsnap: operations_by_dstsnap[opsummary] = []
+            operations_by_dstsnap[opsummary].append((op,src,dst,srcs,dsts))
 
         # second step is to iterate through the operations and look them up in their group
         optimized = []
@@ -227,20 +227,18 @@ def optimize(operation_schedule):
                 )
                 if len(commonprefix) < len(src.get_path()):
                     # the parent is scheduled to experience the same operation as the one evaluated right now
-                    #print "Operation",op,src,opsummary,"skipped because parent",commonprefix,"already slated"
                     continue # then ignore it and go straight to evaluating the next structure
             elif op == "full":
                 opsummary = dsts.name
                 commonprefix = os.path.commonprefix(
                     [
-                        x[1].get_path() for x in full_operations[opsummary]
+                        x[1].get_path() for x in operations_by_dstsnap[opsummary]
                         if x[1].get_path().startswith(src.get_path())
                         or src.get_path().startswith(x[1].get_path())
                     ]
                 )
                 if len(commonprefix) < len(src.get_path()):
-                    # the parent is scheduled to experience the same operation as the one evaluated right now
-                    #print "Operation",op,src,opsummary,"skipped because parent",commonprefix,"already slated"
+                    # the parent is scheduled to send the snapshot that is being evaluated right now
                     continue # then ignore it and go straight to evaluating the next structure
             else:
                 assert 0, "Not reached"
