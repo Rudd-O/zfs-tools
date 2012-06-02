@@ -1,3 +1,10 @@
+zfs-tools (0.1.8ubuntu1) lucid; urgency=low
+
+  * Implement proper incremental replication algorithm to make it possible to
+    resume broken incremental transfers
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Sat, 02 Jun 2012 01:56:03 +0000
+
 zfs-tools (0.1.7ubuntu1) lucid; urgency=low
 
   * Add support for rate-limiting through clpbar
