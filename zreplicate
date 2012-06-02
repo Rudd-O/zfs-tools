@@ -97,14 +97,13 @@ def verbose_stderr(*args,**kwargs):
 src_conn = ZFSConnection(source_host)
 dst_conn = ZFSConnection(destination_host)
 
-verbose_stderr("Replicating dataset %s:%s into %s:%s" % (
+verbose_stderr("Replicating dataset %s:%s into %s:%s..." % (
 		source_host,source_dataset_name,
 		destination_host,destination_dataset_name))
 
 verbose_stderr("Assessing that the source dataset exists...")
 try:
 	source_dataset = src_conn.pools.lookup(source_dataset_name)
-	verbose_stderr("%s: OK" % source_dataset)
 except KeyError:
 	stderr("Error: the source dataset does not exist.  Backup cannot continue.")
 	sys.exit(2)
@@ -113,7 +112,6 @@ except KeyError:
 verbose_stderr("Assessing that the destination dataset exists...")
 try:
 	destination_dataset = dst_conn.pools.lookup(destination_dataset_name)
-	verbose_stderr("%s: OK" % destination_dataset)
 except KeyError:
 	stderr("Error: the destination dataset does not exist.  Backup cannot continue.")
 	sys.exit(2)
@@ -147,11 +145,14 @@ def recursive_replicate(s,d):
 
     # we have combed through the snapshot pairs
     # time to check what the latest common pair is
-    if found_common_pair is False:
+    if not s.get_snapshots():
+        # well, no snapshots in source, do nothing
+        pass
+    elif found_common_pair is False:
         # no snapshot is in common, problem!
         # theoretically destroying destination dataset and resyncing it recursively would work
         # but this requires work in the optimizer that comes later
-        assert 0, "no snapshot in common between %s and %s"%(s,d)
+        sched.append(("full",s,d,None,snapshot_pairs[-1][0]))
     elif found_common_pair == len(snapshot_pairs) - 1:
         # the latest snapshot of both datasets that is common to both, is the latest snapshot in the source
         # we have nothing to do here because the datasets are "in sync"
@@ -200,27 +201,49 @@ def optimize(operation_schedule):
         # first step is to build a dictionary of operations
         # grouped by source snapshot name and destination snapshot name
         operations_by_srcsnap_to_dstsnap = {}
-        for op,src,dst,srcs,dsts in sched:
+        full_operations = {}
+        for op,src,dst,srcs,dsts in filter(lambda x: x[0] == 'incremental', sched):
             srcname = src.get_path()
             opsummary = srcs.name + "->" + dsts.name
             if opsummary not in operations_by_srcsnap_to_dstsnap: operations_by_srcsnap_to_dstsnap[opsummary] = []
             operations_by_srcsnap_to_dstsnap[opsummary].append((op,src,dst,srcs,dsts))
+        for op,src,dst,srcs,dsts in filter(lambda x: x[0] == 'full', sched):
+            srcname = src.get_path()
+            opsummary = dsts.name
+            if opsummary not in full_operations: full_operations[opsummary] = []
+            full_operations[opsummary].append((op,src,dst,srcs,dsts))
 
         # second step is to iterate through the operations and look them up in their group
         optimized = []
         for op,src,dst,srcs,dsts in sched:
-            opsummary = srcs.name + "->" + dsts.name
-            commonprefix = os.path.commonprefix(
-                [
-                    x[1].get_path() for x in operations_by_srcsnap_to_dstsnap[opsummary]
-                    if x[1].get_path().startswith(src.get_path())
-                    or src.get_path().startswith(x[1].get_path())
-                ]
-            )
-            if len(commonprefix) < len(src.get_path()):
-                # the parent is scheduled to experience the same operation as the one evaluated right now
-                #print "Operation",op,src,opsummary,"skipped because parent",commonprefix,"already slated"
-                continue # then ignore it and go straight to evaluating the next structure
+            if op == "incremental":
+                opsummary = srcs.name + "->" + dsts.name
+                commonprefix = os.path.commonprefix(
+                    [
+                        x[1].get_path() for x in operations_by_srcsnap_to_dstsnap[opsummary]
+                        if x[1].get_path().startswith(src.get_path())
+                        or src.get_path().startswith(x[1].get_path())
+                    ]
+                )
+                if len(commonprefix) < len(src.get_path()):
+                    # the parent is scheduled to experience the same operation as the one evaluated right now
+                    #print "Operation",op,src,opsummary,"skipped because parent",commonprefix,"already slated"
+                    continue # then ignore it and go straight to evaluating the next structure
+            elif op == "full":
+                opsummary = dsts.name
+                commonprefix = os.path.commonprefix(
+                    [
+                        x[1].get_path() for x in full_operations[opsummary]
+                        if x[1].get_path().startswith(src.get_path())
+                        or src.get_path().startswith(x[1].get_path())
+                    ]
+                )
+                if len(commonprefix) < len(src.get_path()):
+                    # the parent is scheduled to experience the same operation as the one evaluated right now
+                    #print "Operation",op,src,opsummary,"skipped because parent",commonprefix,"already slated"
+                    continue # then ignore it and go straight to evaluating the next structure
+            else:
+                assert 0, "Not reached"
             #print "Operation",op,src,opsummary,"accepted"
             optimized.append((op,src,dst,srcs,dsts))
 
@@ -279,9 +302,25 @@ if opts.verbose:
     #return _oldpopen(*args,**kwargs)
 #subprocess.Popen = mypopen
 
+verbose_stderr("=================================")
 for op,src,dst,srcs,dsts in optimized_operation_schedule:
+        #assert 0, (op,src,dst,srcs,dsts)
 
-        verbose_stderr("Recursively replicating %s to %s" % (src,dst))
+        source_dataset_path = src.get_path()
+        if srcs:
+            this_send_opts = ["-I", "@" + srcs.name]
+        else:
+            this_send_opts = []
+
+        if dst:
+            destination_dataset_path = dst.get_path()
+        else:
+            commonbase = os.path.commonprefix([src.get_path(),source_dataset.get_path()])
+            remainder = src.get_path()[len(commonbase):]
+            destination_dataset_path = destination_dataset.get_path() + remainder
+        destination_snapshot_path = dsts.get_path()
+
+        verbose_stderr("Recursively replicating %s to %s" % (source_dataset_path,destination_dataset_path))
         verbose_stderr("Base snapshot available in destination: %s" % srcs)
         verbose_stderr("Target snapshot available in source:    %s" % dsts)
 
@@ -289,17 +328,17 @@ for op,src,dst,srcs,dsts in optimized_operation_schedule:
         # manually selecting incremental sending of intermediate snapshots
         # rather than sending of differential snapshots
         # which would happen if we used the fromsnapshot= parameter to transfer()
-        this_send_opts = ["-I", "@" + srcs.name]
 
         src_conn.transfer(
             dst_conn,
-            dsts.get_path(),
-            dst.get_path(),
+            destination_snapshot_path,
+            destination_dataset_path,
             showprogress=opts.progress,
             ratelimit=opts.ratelimit,
             bufsize=bufsize,
             send_opts=send_opts+this_send_opts,
             receive_opts=receive_opts
         )
+        verbose_stderr("=================================")
 
-        verbose_stderr("")
+verbose_stderr("Replication complete.")
