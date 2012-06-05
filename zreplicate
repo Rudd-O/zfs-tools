@@ -132,7 +132,10 @@ def recursive_replicate(s,d):
         except (KeyError,AttributeError): ssnap = None
         try: dsnap = d.get_snapshot(snap)
         except (KeyError,AttributeError): dsnap = None
-        if not snap in [ x[0].name for x in snapshot_pairs ]:
+        # if the source snapshot exists and is not already in the table of snapshots
+        # then pair it up with its destination snapshot (if it exists) or None
+        # and add it to the table of snapshots
+        if ssnap and not snap in [ x[0].name for x in snapshot_pairs ]:
             snapshot_pairs.append((ssnap,dsnap))
 
     # now we have a list of all snapshots, paired up by name, and in chronological order
