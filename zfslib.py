@@ -301,27 +301,31 @@ class ZFSConnection:
 		run_command(self.command+["snapshot","-r","%s@%s"%(name,snapshotname)])
 		self._dirty = True
 
-	def send(self,name,opts=None,bufsize=-1):
+	def send(self,name,opts=None,bufsize=-1,compression=False):
 		if not opts: opts = []
-		cmd = self.command + ["send"] + opts + [name]
+		cmd = self.command
+                if cmd[0] == 'ssh': cmd.insert(1,"-C")
+		cmd = cmd + ["send"] + opts + [name]
 		# print "Executing command",cmd
 		p = subprocess.Popen(cmd,stdin=file(os.devnull,"r"),stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
-	def receive(self,name,pipe,opts=None,bufsize=-1):
+	def receive(self,name,pipe,opts=None,bufsize=-1,compression=False):
 		if not opts: opts = []
-		cmd = self.command + ["receive"] + opts + [name]
+                cmd = self.command
+                if cmd[0] == 'ssh': cmd.insert(1,"-C")
+		cmd = cmd + ["receive"] + opts + [name]
 		# print "Executing command",cmd
 		p = subprocess.Popen(cmd,stdin=pipe,bufsize=bufsize)
 		return p
 
-	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False,bufsize=-1,send_opts=None,receive_opts=None,ratelimit=-1):
+	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False,bufsize=-1,send_opts=None,receive_opts=None,ratelimit=-1,compression=False):
 		if send_opts is None: send_opts = []
 		if receive_opts is None: receive_opts = []
 		
 		if fromsnapshot: fromsnapshot=["-i",fromsnapshot]
 		else: fromsnapshot = []
-		sndprg = src_conn.send(s,opts=[]+fromsnapshot+send_opts,bufsize=bufsize)
+		sndprg = src_conn.send(s,opts=[]+fromsnapshot+send_opts,bufsize=bufsize,compression=compression)
 		
 		if showprogress:
 		    barargs = []
@@ -345,7 +349,7 @@ class ZFSConnection:
 				raise
 		else:
 			barprg = sndprg
-		try: rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts,bufsize=bufsize)
+		try: rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts,bufsize=bufsize,compression=compression)
 		except OSError:
 			os.kill(sndprg.pid,15)
 			os.kill(barprg.pid,15)
