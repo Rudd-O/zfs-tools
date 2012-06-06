@@ -1,9 +1,20 @@
+zfs-tools (0.2.0ubuntu1) lucid; urgency=low
+
+  * Add the ability to use pv as a progress meter
+  * Overhaul code related to the progress metering and transfer child processes
+  * Change default buffer size to -1 (OS default, measured to be faster on Linux)
+  * Provide an option to use SSH compression
+  * Enhance usage message to show that clpbar is also accepted as a progress meter
+  * Fix the usage of the bufsize parameters in the zfs send/recv executions
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Wed, 06 Jun 2012 01:44:35 +0000
+
 zfs-tools (0.1.9ubuntu1) lucid; urgency=low
 
   * Eliminate the use of the sets module
   * Fix bug in snapshot collection that caused incremental transfer to fail
 
- -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Tue, 05 Jun 2012 17:47:58 +0000
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Wed, 06 Jun 2012 01:40:53 +0000
 
 zfs-tools (0.1.8ubuntu1) lucid; urgency=low
 

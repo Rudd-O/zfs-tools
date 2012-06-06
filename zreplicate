@@ -72,7 +72,7 @@ try:
 	bufsize = int(opts.bufsize)
 	assert bufsize >= 16384
 except (ValueError,AssertionError),e:
-	parser.error("error: bufsize must be an integer greater than 16384")
+	parser.error("bufsize must be an integer greater than 16384")
 
 if len(args) == 2:
 	try: source_host, source_dataset_name = args[0].split(":",1)
@@ -80,13 +80,13 @@ if len(args) == 2:
 	try: destination_host, destination_dataset_name = args[1].split(":",1)
 	except ValueError: destination_host, destination_dataset_name = "localhost",args[1]
 else:
-	parser.error("error: arguments are wrong")
+	parser.error("arguments are wrong")
 
 if opts.ratelimit != -1:
     if opts.ratelimit < 1024:
-        parser.error("error: rate limit (%s) must be higher than 1024 bytes per second"%opts.ratelimit)
+        parser.error("rate limit (%s) must be higher than 1024 bytes per second"%opts.ratelimit)
     if not opts.progress:
-        parser.error("error: to apply a rate limit, you must specify --progress too")
+        parser.error("to apply a rate limit, you must specify --progress too")
 
 def verbose_stderr(*args,**kwargs):
 	if opts.verbose: stderr(*args,**kwargs)
