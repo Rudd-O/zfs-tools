@@ -60,7 +60,7 @@ def uniq(seq, idfun=None):
 #===================== configuration =====================
 
 parser = optparse.OptionParser("usage: %prog [-onv] [-b BUFSIZE] [-l RATELIMIT] <srcdatasetname> <dstdatasetname>")
-parser.add_option('-o', '--progress', action='store_true', dest='progress', default=False, help='show progress (depends on the executabilty of the \'bar\' program) (default: %default)')
+parser.add_option('-o', '--progress', action='store_true', dest='progress', default=False, help='show progress (depends on the executabilty of the \'bar\' a.k.a. \'clpbar\' program) (default: %default)')
 parser.add_option('-l', '--rate-limit', action='store', dest='ratelimit', default=-1, type="int", help='rate limit in bytes per second (requires --progress) (default: %default which means no limit)')
 parser.add_option('-n', '--dry-run', action='store_true', dest='dryrun', default=False, help='don\'t actually manipulate any file systems')
 parser.add_option('-b', '--bufsize', action='store', dest='bufsize', default=1048576, help='buffer size in bytes for network operations (default: %default)')
