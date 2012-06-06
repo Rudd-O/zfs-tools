@@ -60,6 +60,45 @@ def run_command(cmd,inp=None,capture_stderr=False):
                 raise c
         return ''.join(stdout),''.join(stderr)
 
+def progressbar(pipe,bufsize=-1,ratelimit=-1):
+
+    def clpbar(cmdname):
+        barargs = []
+        if bufsize != -1:
+            barargs = ["-bs",str(bufsize)]
+        if ratelimit != -1:
+            barargs = barargs + ['-th',str(ratelimit)]
+        barprg = subprocess.Popen(
+            [cmdname,"-dan"] + barargs,
+            stdin=pipe,stdout=subprocess.PIPE,bufsize=bufsize)
+        return barprg
+
+    def pv(cmdname):
+        barargs = []
+        if bufsize != -1:
+            barargs = ["-B",str(bufsize)]
+        if ratelimit != -1:
+            barargs = barargs + ['-L',str(ratelimit)]
+        barprg = subprocess.Popen(
+            [cmdname,"-ptrab"] + barargs,
+            stdin=pipe,stdout=subprocess.PIPE,bufsize=bufsize)
+        return barprg
+
+    barprograms = [
+        ("bar",clpbar),
+        ("clpbar",clpbar),
+        ("pv",pv),
+    ]
+
+    for name,func in barprograms:
+        try:
+            subprocess.call([name,'-h'],stdout=file(os.devnull,"w"),stderr=file(os.devnull,"w"),stdin=file(os.devnull,"r"))
+        except OSError,e:
+            if e.errno == 2: continue
+            assert 0, "not reached while searching for clpbar or pv"
+        return func(name)
+    raise OSError(2,"no such file or directory searching for clpbar or pv")
+
 
 class Dataset:
 	name = None
@@ -328,45 +367,36 @@ class ZFSConnection:
 		sndprg = src_conn.send(s,opts=[]+fromsnapshot+send_opts,bufsize=bufsize,compression=compression)
 		
 		if showprogress:
-		    barargs = []
-		    if bufsize != -1:
-			barargs = ["-bs",str(bufsize)]
-                    if ratelimit != -1:
-                        barargs = barargs + ['-th',str(ratelimit)]
-		    try: barprg = subprocess.Popen(
-			["clpbar","-dan"] + barargs,
-			stdin=sndprg.stdout,stdout=subprocess.PIPE,bufsize=bufsize)
+		    try:
+                        barprg = progressbar(pipe=sndprg.stdout,bufsize=bufsize,ratelimit=ratelimit)
 		    except OSError, e:
-			if e.errno == 2:
-		            try: barprg = subprocess.Popen(
-			        ["bar","-dan"] + barargs,
-			        stdin=sndprg.stdout,stdout=subprocess.PIPE,bufsize=bufsize)
-		            except OSError:
-			        os.kill(sndprg.pid,15)
-			        raise
-			else:
-			        os.kill(sndprg.pid,15)
-				raise
+                        os.kill(sndprg.pid,15)
+                        raise
 		else:
 			barprg = sndprg
+
 		try: rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts,bufsize=bufsize,compression=compression)
 		except OSError:
 			os.kill(sndprg.pid,15)
-			os.kill(barprg.pid,15)
+			if sndprg.pid != barprg.pid: os.kill(barprg.pid,15)
 			raise
 
+                dst_conn._dirty = True
 		ret = sndprg.wait()
 		if ret:
 			os.kill(rcvprg.pid,15)
-			if showprogress: os.kill(barprg.pid,15)
+			if sndprg.pid != barprg.pid: os.kill(barprg.pid,15)
+			raise CalledProcessError(ret,["zfs","send"])
+
 		ret2 = rcvprg.wait()
-		if showprogress: ret4 = barprg.wait()
-		if ret:  raise CalledProcessError(ret,["zfs","send"])
-		if ret2: raise CalledProcessError(ret,["zfs","receive"])
-		if showprogress:
-			if ret4: raise CalledProcessError(ret,["clpbar"])
-		
-		dst_conn._dirty = True
+		if ret2:
+                        if sndprg.pid != barprg.pid: os.kill(barprg.pid,15)
+                        raise CalledProcessError(ret2,["zfs","receive"])
+
+                if sndprg.pid != barprg.pid:
+                        ret3 = barprg.wait()
+                        if ret3:
+                                raise CalledProcessError(ret3,["clpbar"])
 
 def stderr(text):
 	"""print out something to standard error, followed by an ENTER"""
