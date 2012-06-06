@@ -321,7 +321,7 @@ class ZFSConnection:
 		
 		if fromsnapshot: fromsnapshot=["-i",fromsnapshot]
 		else: fromsnapshot = []
-		sndprg = src_conn.send(s,opts=[]+fromsnapshot+send_opts)
+		sndprg = src_conn.send(s,opts=[]+fromsnapshot+send_opts,bufsize=bufsize)
 		
 		if showprogress:
 		    barargs = []
@@ -345,7 +345,7 @@ class ZFSConnection:
 				raise
 		else:
 			barprg = sndprg
-		try: rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts)
+		try: rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts,bufsize=bufsize)
 		except OSError:
 			os.kill(sndprg.pid,15)
 			os.kill(barprg.pid,15)
