@@ -1,8 +1,9 @@
 zfs-tools (0.2.1ubuntu1) lucid; urgency=low
 
   * Overhauled README into markdown
+  * Changed sudoers file name to prevent conflict with upstream ZFS DKMS
 
- -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Wed, 06 Jun 2012 02:10:38 +0000
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Mon, 09 Jul 2012 22:47:01 +0000
 
 zfs-tools (0.2.0ubuntu1) lucid; urgency=low
 
