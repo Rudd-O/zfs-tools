@@ -80,7 +80,7 @@ def progressbar(pipe,bufsize=-1,ratelimit=-1):
         if ratelimit != -1:
             barargs = barargs + ['-L',str(ratelimit)]
         barprg = subprocess.Popen(
-            [cmdname,"-ptrab"] + barargs,
+            [cmdname,"-ptrb"] + barargs,
             stdin=pipe,stdout=subprocess.PIPE,bufsize=bufsize)
         return barprg
 
