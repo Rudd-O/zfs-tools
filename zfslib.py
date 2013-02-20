@@ -348,8 +348,8 @@ class ZFSConnection:
 
 	def send(self,name,opts=None,bufsize=-1,compression=False):
 		if not opts: opts = []
-		cmd = self.command
-                if cmd[0] == 'ssh': cmd.insert(1,"-C")
+		cmd = list(self.command)
+                if compression and cmd[0] == 'ssh': cmd.insert(1,"-C")
 		cmd = cmd + ["send"] + opts + [name]
 		# print "Executing command",cmd
 		p = subprocess.Popen(cmd,stdin=file(os.devnull,"r"),stdout=subprocess.PIPE,bufsize=bufsize)
@@ -357,8 +357,8 @@ class ZFSConnection:
 
 	def receive(self,name,pipe,opts=None,bufsize=-1,compression=False):
 		if not opts: opts = []
-                cmd = self.command
-                if cmd[0] == 'ssh': cmd.insert(1,"-C")
+                cmd = list(self.command)
+                if compression and cmd[0] == 'ssh': cmd.insert(1,"-C")
 		cmd = cmd + ["receive"] + opts + [name]
 		# print "Executing command",cmd
 		p = subprocess.Popen(cmd,stdin=pipe,bufsize=bufsize)
