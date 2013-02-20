@@ -66,6 +66,7 @@ parser.add_option('-n', '--dry-run', action='store_true', dest='dryrun', default
 parser.add_option('-b', '--bufsize', action='store', dest='bufsize', default=-1, help='buffer size in bytes for network operations (default: %default i.e. OS default)')
 parser.add_option('-C', '--force-compression', action='store_true', dest='force_compression', default=False, help='forcibly enable gzip compression for transfers via SSH (default: %default i.e. obey SSH configuration)')
 parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='be verbose (default: %default)')
+parser.add_option('-t', '--trust', action='store_true', dest='trust', default=False, help='automatically trust unknown or mismatched SSH keys of remote hosts (default: %default)')
 opts,args = parser.parse_args(sys.argv[1:])
 
 try:
@@ -95,8 +96,8 @@ def verbose_stderr(*args,**kwargs):
 
 # ================ start program algorithm ===================
 
-src_conn = ZFSConnection(source_host)
-dst_conn = ZFSConnection(destination_host)
+src_conn = ZFSConnection(source_host, trust=opts.trust)
+dst_conn = ZFSConnection(destination_host, trust=opts.trust)
 
 verbose_stderr("Replicating dataset %s:%s into %s:%s..." % (
 		source_host,source_dataset_name,
