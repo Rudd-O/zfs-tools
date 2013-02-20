@@ -1,3 +1,9 @@
+zfs-tools (0.2.4ubuntu1) lucid; urgency=low
+
+  * Gain option to trust ssh hosts
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Wed, 20 Feb 2013 00:53:12 -0800
+
 zfs-tools (0.2.3ubuntu1) lucid; urgency=low
 
   * Some versions of the pv program do not support the -a switch
