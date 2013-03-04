@@ -1,3 +1,9 @@
+zfs-tools (0.2.7ubuntu1) lucid; urgency=low
+
+  * use select to wait for zfs send and receive
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Sun, 03 Mar 2013 21:18:45 -0800
+
 zfs-tools (0.2.6ubuntu1) lucid; urgency=low
 
   * make sure that waiting for SSH to finish does not hang forever

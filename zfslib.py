@@ -353,7 +353,7 @@ class ZFSConnection:
                 if compression and cmd[0] == 'ssh': cmd.insert(1,"-C")
 		cmd = cmd + ["send"] + opts + [name]
 		# print "Executing command",cmd
-		p = subprocess.Popen(cmd,stdin=file(os.devnull,"r"),stdout=subprocess.PIPE,bufsize=bufsize)
+		p = subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
 	def receive(self,name,pipe,opts=None,bufsize=-1,compression=False):
@@ -362,7 +362,7 @@ class ZFSConnection:
                 if compression and cmd[0] == 'ssh': cmd.insert(1,"-C")
 		cmd = cmd + ["receive"] + opts + [name]
 		# print "Executing command",cmd
-		p = subprocess.Popen(cmd,stdin=pipe,bufsize=bufsize)
+		p = subprocess.Popen(cmd,stdin=pipe,stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
 	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False,bufsize=-1,send_opts=None,receive_opts=None,ratelimit=-1,compression=False):
@@ -389,12 +389,14 @@ class ZFSConnection:
 			raise
 
                 dst_conn._dirty = True
-                poller = select.epoll()
-                poller.register(sndprg.stdout, select.EPOLLHUP)
-                poller.register(rcvprg.stdin, select.EPOLLHUP)
-		poller.poll(timeout=-1)
-		# when we reach here, we can simply close all pipes
+		# when we reach here, and programs ended, we can simply close all pipes
 		# and collect status outputs
+		poller = select.epoll()
+		poller.register(sndprg.stdin, select.EPOLLHUP)
+		poller.register(sndprg.stdout, select.EPOLLHUP)
+		poller.register(rcvprg.stdout, select.EPOLLHUP)
+		if showprogress: poller.register(barprg.stdout, select.EPOLLHUP)
+		poller.poll(timeout=-1)
 		progs = [ sndprg, rcvprg ]
 		if showprogress: progs.append(barprg)
 		for prog in progs:
@@ -402,13 +404,12 @@ class ZFSConnection:
 			try: pipe.close()
 			except Exception: pass
 		rets = [ prog.wait() for prog in progs ]
-		ret = sndprg.wait()
-		if ret[0]:
-			raise CalledProcessError(ret[0],["zfs","send"])
-		if ret[1]:
-			raise CalledProcessError(ret[1],["zfs","recv"])
-		if showprogress and ret[2]:
-			raise CalledProcessError(ret[2],["clpbar"])
+		if rets[1]:
+			raise CalledProcessError(rets[1],["zfs","recv"])
+		if rets[0]:
+			raise CalledProcessError(rets[0],["zfs","send"])
+		if showprogress and rets[2]:
+			raise CalledProcessError(rets[2],["clpbar"])
 
 def stderr(text):
 	"""print out something to standard error, followed by an ENTER"""
