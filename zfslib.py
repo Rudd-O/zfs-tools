@@ -8,6 +8,7 @@ import time
 import optparse
 import threading
 import signal
+import select
 
 # solaris doesn't have python 2.5, we copy code from the Python library this as a compatibility measure
 try: from subprocess import CalledProcessError
@@ -388,21 +389,26 @@ class ZFSConnection:
 			raise
 
                 dst_conn._dirty = True
+                poller = select.epoll()
+                poller.register(sndprg.stdout, select.EPOLLHUP)
+                poller.register(rcvprg.stdin, select.EPOLLHUP)
+		poller.poll(timeout=-1)
+		# when we reach here, we can simply close all pipes
+		# and collect status outputs
+		progs = [ sndprg, rcvprg ]
+		if showprogress: progs.append(barprg)
+		for prog in progs:
+		    for pipe in [ prog.stdout, prog.stderr, prog.stdin ]:
+			try: pipe.close()
+			except Exception: pass
+		rets = [ prog.wait() for prog in progs ]
 		ret = sndprg.wait()
-		if ret:
-			os.kill(rcvprg.pid,15)
-			if sndprg.pid != barprg.pid: os.kill(barprg.pid,15)
-			raise CalledProcessError(ret,["zfs","send"])
-
-		ret2 = rcvprg.wait()
-		if ret2:
-                        if sndprg.pid != barprg.pid: os.kill(barprg.pid,15)
-                        raise CalledProcessError(ret2,["zfs","receive"])
-
-                if sndprg.pid != barprg.pid:
-                        ret3 = barprg.wait()
-                        if ret3:
-                                raise CalledProcessError(ret3,["clpbar"])
+		if ret[0]:
+			raise CalledProcessError(ret[0],["zfs","send"])
+		if ret[1]:
+			raise CalledProcessError(ret[1],["zfs","recv"])
+		if showprogress and ret[2]:
+			raise CalledProcessError(ret[2],["clpbar"])
 
 def stderr(text):
 	"""print out something to standard error, followed by an ENTER"""

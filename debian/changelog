@@ -1,3 +1,9 @@
+zfs-tools (0.2.6ubuntu1) lucid; urgency=low
+
+  * make sure that waiting for SSH to finish does not hang forever
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Sun, 03 Mar 2013 20:21:05 -0800
+
 zfs-tools (0.2.5ubuntu1) lucid; urgency=low
 
   * actually enable compression only whether compression is desired
