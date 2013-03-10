@@ -1,6 +1,6 @@
 #ZFS tools
 
-| Donate to support free software |
+| Donate to support this free software |
 |:------------------------------------:|
 | <img width="164" height="164" title="" alt="" src="doc/bitcoin.png" /> |
 | [1Cw9nZu9ygknussPofMWCzmSMveusTbQvN](bitcoin:1Cw9nZu9ygknussPofMWCzmSMveusTbQvN) |
