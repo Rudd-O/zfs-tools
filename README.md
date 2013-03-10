@@ -2,7 +2,7 @@
 
 | Donate to support free software |
 |:------------------------------------:|
-| <img width="164" height="164" title="" alt="" src="donate.png" /> |
+| <img width="164" height="164" title="" alt="" src="doc/bitcoin.png" /> |
 | [1Cw9nZu9ygknussPofMWCzmSMveusTbQvN](bitcoin:1Cw9nZu9ygknussPofMWCzmSMveusTbQvN) |
 
 The ZFS backup tools will help you graft an entire ZFS pool as a filesystem
