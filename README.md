@@ -1,12 +1,9 @@
 #ZFS tools
 
--------------------------
-
-*Support development of this software. [Donate to 1Cw9nZu9ygknussPofMWCzmSMveusTbQvN](bitcoin:1Cw9nZu9ygknussPofMWCzmSMveusTbQvN)*
-
-<img width="164" height="164" title="" alt="" src="donate.png" />
-
--------------------------
+| Donate to support free software |
+|:------------------------------------:|
+| <img width="164" height="164" title="" alt="" src="donate.png" /> |
+| [1Cw9nZu9ygknussPofMWCzmSMveusTbQvN](bitcoin:1Cw9nZu9ygknussPofMWCzmSMveusTbQvN) |
 
 The ZFS backup tools will help you graft an entire ZFS pool as a filesystem
 into a backup machine, without having to screw around snapshot names or
