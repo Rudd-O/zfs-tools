@@ -353,7 +353,7 @@ class ZFSConnection:
                 if compression and cmd[0] == 'ssh': cmd.insert(1,"-C")
 		cmd = cmd + ["send"] + opts + [name]
 		# print "Executing command",cmd
-		p = subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,bufsize=bufsize)
+		p = subprocess.Popen(cmd,stdin=file(os.devnull),stdout=subprocess.PIPE,bufsize=bufsize)
 		return p
 
 	def receive(self,name,pipe,opts=None,bufsize=-1,compression=False):
@@ -362,7 +362,7 @@ class ZFSConnection:
                 if compression and cmd[0] == 'ssh': cmd.insert(1,"-C")
 		cmd = cmd + ["receive"] + opts + [name]
 		# print "Executing command",cmd
-		p = subprocess.Popen(cmd,stdin=pipe,stdout=subprocess.PIPE,bufsize=bufsize)
+		p = subprocess.Popen(cmd,stdin=pipe,bufsize=bufsize)
 		return p
 
 	def transfer(src_conn,dst_conn,s,d,fromsnapshot=None,showprogress=False,bufsize=-1,send_opts=None,receive_opts=None,ratelimit=-1,compression=False):
@@ -376,40 +376,32 @@ class ZFSConnection:
 		if showprogress:
 		    try:
                         barprg = progressbar(pipe=sndprg.stdout,bufsize=bufsize,ratelimit=ratelimit)
+                        sndprg.stdout.close()
 		    except OSError, e:
                         os.kill(sndprg.pid,15)
                         raise
 		else:
 			barprg = sndprg
 
-		try: rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts,bufsize=bufsize,compression=compression)
+		try:
+                        rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts,bufsize=bufsize,compression=compression)
+                        barprg.stdout.close()
 		except OSError:
 			os.kill(sndprg.pid,15)
 			if sndprg.pid != barprg.pid: os.kill(barprg.pid,15)
 			raise
 
                 dst_conn._dirty = True
-		# when we reach here, and programs ended, we can simply close all pipes
-		# and collect status outputs
-		poller = select.epoll()
-		poller.register(sndprg.stdin, select.EPOLLHUP)
-		poller.register(sndprg.stdout, select.EPOLLHUP)
-		poller.register(rcvprg.stdout, select.EPOLLHUP)
-		if showprogress: poller.register(barprg.stdout, select.EPOLLHUP)
-		poller.poll(timeout=-1)
-		progs = [ sndprg, rcvprg ]
-		if showprogress: progs.append(barprg)
-		for prog in progs:
-		    for pipe in [ prog.stdout, prog.stderr, prog.stdin ]:
-			try: pipe.close()
-			except Exception: pass
-		rets = [ prog.wait() for prog in progs ]
-		if rets[1]:
-			raise CalledProcessError(rets[1],["zfs","recv"])
-		if rets[0]:
-			raise CalledProcessError(rets[0],["zfs","send"])
-		if showprogress and rets[2]:
-			raise CalledProcessError(rets[2],["clpbar"])
+                if showprogress:
+                        sendret, barret, rcvret = sndprg.wait(), barprg.wait(), rcvprg.wait()
+                else:
+                        sendret, barret, rcvret = sndprg.wait(), 0, rcvprg.wait()
+                if sendret:
+                        raise CalledProcessError(sendret,["zfs","send"])
+                if barret:
+                        raise CalledProcessError(barret,["clpbar"])
+                if rcvret:
+                        raise CalledProcessError(rcvret,["zfs","recv"])
 
 def stderr(text):
 	"""print out something to standard error, followed by an ENTER"""
