@@ -13,19 +13,7 @@ from zfsutils import uniq
 from zfsutils import simplify
 import warnings
 import itertools
-
-# solaris doesn't have python 2.5, we copy code from the Python library this as a compatibility measure
-try: from subprocess import CalledProcessError
-except ImportError:
-	class CalledProcessError(Exception):
-		"""This exception is raised when a process run by check_call() returns
-		a non-zero exit status.  The exit status will be stored in the
-		returncode attribute."""
-		def __init__(self, returncode, cmd):
-			self.returncode = returncode
-			self.cmd = cmd
-		def __str__(self):
-			return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+from subprocess import CalledProcessError
 
 def run_command(cmd,inp=None,capture_stderr=False):
         if capture_stderr:
