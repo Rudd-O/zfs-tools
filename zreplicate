@@ -75,8 +75,6 @@ optimized_operation_schedule = optimize(operation_schedule)
 
 send_opts = []
 receive_opts = []
-if opts.dryrun:
-	receive_opts.append("-n")
 if opts.verbose:
 	send_opts.append("-v")
 	receive_opts.append("-v")
@@ -96,7 +94,8 @@ for op,src,dst,srcs,dsts in optimized_operation_schedule:
 
         if op == "create_stub":
             verbose_stderr("Creating (%s) %s in destination" % (op,destination_dataset_path))
-            dst_conn.create_dataset(destination_dataset_path)
+            if not opts.dryrun:
+                dst_conn.create_dataset(destination_dataset_path)
 
         else:
             destination_snapshot_path = dsts.get_path()
@@ -110,17 +109,18 @@ for op,src,dst,srcs,dsts in optimized_operation_schedule:
             verbose_stderr("Base snapshot available in destination: %s" % srcs)
             verbose_stderr("Target snapshot available in source:    %s" % dsts)
 
-            src_conn.transfer(
-                dst_conn,
-                destination_snapshot_path,
-                destination_dataset_path,
-                showprogress=opts.progress,
-                compression=opts.force_compression,
-                ratelimit=opts.ratelimit,
-                bufsize=bufsize,
-                send_opts=send_opts+this_send_opts,
-                receive_opts=receive_opts
-            )
+            if not opts.dryrun:
+                src_conn.transfer(
+                    dst_conn,
+                    destination_snapshot_path,
+                    destination_dataset_path,
+                    showprogress=opts.progress,
+                    compression=opts.force_compression,
+                    ratelimit=opts.ratelimit,
+                    bufsize=bufsize,
+                    send_opts=send_opts+this_send_opts,
+                    receive_opts=receive_opts
+                )
         verbose_stderr("=================================")
 
 verbose_stderr("Replication complete.")
