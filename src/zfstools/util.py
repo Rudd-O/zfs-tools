@@ -93,3 +93,12 @@ def stderr(text):
     """print out something to standard error, followed by an ENTER"""
     sys.stderr.write(text)
     sys.stderr.write("\n")
+
+__verbose = False
+def verbose_stderr(*args, **kwargs):
+    global __verbose
+    if __verbose: stderr(*args, **kwargs)
+
+def set_verbose(boolean):
+    global __verbose
+    __verbose = boolean

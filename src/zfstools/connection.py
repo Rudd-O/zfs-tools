@@ -40,7 +40,7 @@ class ZFSConnection:
         self._dirty = True
         return self.pools.lookup(name)
 
-    def destroy(self,name):
+    def destroy_recursively(self, name):
         subprocess.check_call(self.command + ["destroy", '-r', name])
         self._dirty = True
 

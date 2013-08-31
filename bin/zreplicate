@@ -7,7 +7,7 @@ sys.path.append(
 )
 import optparse
 from zfstools.connection import ZFSConnection
-from zfstools.util import stderr
+from zfstools.util import stderr, verbose_stderr, set_verbose
 from zfstools.sync import recursive_replicate, optimize
 
 #===================== configuration =====================
@@ -42,8 +42,7 @@ if opts.ratelimit != -1:
     if not opts.progress:
         parser.error("to apply a rate limit, you must specify --progress too")
 
-def verbose_stderr(*args,**kwargs):
-	if opts.verbose: stderr(*args,**kwargs)
+set_verbose(opts.verbose)
 
 #===================== end configuration =================
 
