@@ -14,14 +14,6 @@ The utilities let you do this:
 1. zfs-shell:  
    a shell that allows remote ZFS administration and nothing more
 
-2. zmirror:  
-   a command that snapshots a dataset or pool, then sends the snapshots,
-   dataset by dataset, to another machine, without using replication streams.
-   It will delete obsolete snapshots on the source and destination machines,
-   keeping a maximum of one snapshot tree on each machine.  It will not
-   delete snapshots indiscriminately, though -- it will only delete snapshots
-   prefixed with zmirror-.
-
 3. zsnap:  
    a command that snapshots a dataset or pool, then deletes old snapshots
 
@@ -108,15 +100,3 @@ If all went well, you should be able to do this without issue:
     # into receiverpool/senderpool
 
 And that's it, really.
-
-##zmirror
-
-Zmirror is an useful command that does not replicate a dataset tree and
-all of its snapshots, but rather only replicates dataset by dataset
-(still recursively, but breaking the logical references between datasets)
-and only keeps the latest snapshot.  This can be useful in the case that
-you do not have as much disk space on the receiving pool as you have on
-the source pool.  It, however, will not respect deduplication, clones or
-copy-on-write, so there's that.  It is old code that I was using before
-I figured out how to effectively use replication streams in lieu of simple
-dataset sends and receives.
