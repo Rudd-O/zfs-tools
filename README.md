@@ -50,6 +50,7 @@ will be receiving the backup.
 - Let `sudo` know that the new user can run the zfs command  
   `zfs ALL = NOPASSWD: /usr/local/sbin/zfs`  
   (ensure you remove the `requiretty` default on `/etc/sudoers`)
+  (check `sudoers.zfs-tools` in `contrib/` for an example)
 
 - Set up a cron job to run `zsnap` as frequently as you want to,
   snapshotting the dataset you intend to replicate.

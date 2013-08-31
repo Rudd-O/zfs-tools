@@ -2,12 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import sys, os
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 import optparse
-from zfslib import ZFSConnection
-from zfslib import stderr
-from zfslib import recursive_replicate
-from zfslib import optimize
+from zfstools.connection import ZFSConnection
+from zfstools.util import stderr
+from zfstools.sync import recursive_replicate, optimize
 
 #===================== configuration =====================
 
