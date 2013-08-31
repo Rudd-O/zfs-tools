@@ -4,22 +4,22 @@ Created on Mar 19, 2013
 @author: rudd-o
 '''
 import unittest
-import sys, os
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-import zfslib
+from zfstools.models import PoolSet
+from zfstools import sync
 
 def x(string):
     return "\n".join(
          [ "\t".join(x.split()) for x in string.splitlines() ]
     )
 
+
 class TestRecursiveReplicate(unittest.TestCase):
 
     maxDiff = None
 
     def test_does_nothing(self):
-        src = zfslib.PoolSet()
-        dst = zfslib.PoolSet()
+        src = PoolSet()
+        dst = PoolSet()
         src.parse_zfs_r_output(
 x('''karen   98.8G   13.4G   30K     none
 karen/ROOT      95.2G   13.4G   30K     none
@@ -51,15 +51,15 @@ target/karen/plonezeo  1360136643
 ''')
         )
         
-        result = zfslib.recursive_replicate(
+        result = sync.recursive_replicate(
             src.lookup("karen"),
             dst.lookup("target/karen")
         )
         self.assertFalse(result)
 
     def test_replicates_one_snapshot_fully(self):
-        src = zfslib.PoolSet()
-        dst = zfslib.PoolSet()
+        src = PoolSet()
+        dst = PoolSet()
         src.parse_zfs_r_output(
 x('''karen   98.8G   13.4G   30K     none
 karen/ROOT      95.2G   13.4G   30K     none
@@ -93,7 +93,7 @@ target/karen/plonezeo  1360136643
 ''')
         )
         
-        result = zfslib.recursive_replicate(
+        result = sync.recursive_replicate(
             src.lookup("karen"),
             dst.lookup("target/karen")
         )
@@ -107,7 +107,7 @@ target/karen/plonezeo  1360136643
             )]
         )
         self.assertEquals(
-            zfslib.optimize_coalesce(result),
+            sync.optimize_coalesce(result),
             [('full',
               src.lookup("karen/plonezeo"),
               dst.lookup("target/karen/plonezeo"),
@@ -117,8 +117,8 @@ target/karen/plonezeo  1360136643
         )
 
     def test_are_in_sync(self):
-        src = zfslib.PoolSet()
-        dst = zfslib.PoolSet()
+        src = PoolSet()
+        dst = PoolSet()
         src.parse_zfs_r_output(
 x('''karen   98.8G   13.4G   30K     none
 karen/ROOT      95.2G   13.4G   30K     none
@@ -154,15 +154,15 @@ target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
 ''')
         )
         
-        result = zfslib.recursive_replicate(
+        result = sync.recursive_replicate(
             src.lookup("karen"),
             dst.lookup("target/karen")
         )
         self.assertFalse(result)
 
     def test_replicates_one_snapshot_incrementally(self):
-        src = zfslib.PoolSet()
-        dst = zfslib.PoolSet()
+        src = PoolSet()
+        dst = PoolSet()
         src.parse_zfs_r_output(
 x('''karen   98.8G   13.4G   30K     none
 karen/ROOT      95.2G   13.4G   30K     none
@@ -200,7 +200,7 @@ target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
 ''')
         )
         
-        result = zfslib.recursive_replicate(
+        result = sync.recursive_replicate(
             src.lookup("karen"),
             dst.lookup("target/karen")
         )
@@ -215,8 +215,8 @@ target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
         )
 
     def test_replicates_siblings_incrementally(self):
-        src = zfslib.PoolSet()
-        dst = zfslib.PoolSet()
+        src = PoolSet()
+        dst = PoolSet()
         src.parse_zfs_r_output(
 x('''s   98.8G   13.4G   30K     none
 s/a  3.40G   13.4G   3.37G   /opt/plonezeo
@@ -265,16 +265,16 @@ t/s/b@1     1363676402
              ),
             ]
         
-        real = zfslib.recursive_replicate(
+        real = sync.recursive_replicate(
             src.lookup("s"),
             dst.lookup("t/s")
         )
         self.assertEquals(expected,real)
-        self.assertEquals(expected,zfslib.optimize_coalesce(real))
+        self.assertEquals(expected, sync.optimize_coalesce(real))
 
     def test_replicates_unequal_siblings(self):
-        src = zfslib.PoolSet()
-        dst = zfslib.PoolSet()
+        src = PoolSet()
+        dst = PoolSet()
         src.parse_zfs_r_output(
 x('''s   98.8G   13.4G   30K     none
 s/a  3.40G   13.4G   3.37G   /opt/plonezeo
@@ -340,18 +340,18 @@ t/s/b@1     1363676402
              ),
             ]
         
-        real = zfslib.recursive_replicate(
+        real = sync.recursive_replicate(
             src.lookup("s"),
             dst.lookup("t/s")
         )
         self.assertEquals(expected,real)
 
-        real_coalesced = zfslib.optimize_coalesce(real)
+        real_coalesced = sync.optimize_coalesce(real)
         self.assertEquals(expected_coalesced,real_coalesced)
 
     def test_replicates_recursive_snapshots_with_exceptions(self):
-        src = zfslib.PoolSet()
-        dst = zfslib.PoolSet()
+        src = PoolSet()
+        dst = PoolSet()
         src.parse_zfs_r_output(
 x('''s   98.8G   13.4G   30K     none
 s@1     0       -       3.37G   -
@@ -439,18 +439,18 @@ t/s/b@1     1363676402
              ),
             ] + expected[-1:]
         
-        real = zfslib.recursive_replicate(
+        real = sync.recursive_replicate(
             src.lookup("s"),
             dst.lookup("t/s")
         )
         self.assertEquals(expected,real)
 
-        real_coalesced = zfslib.optimize_coalesce(real)
+        real_coalesced = sync.optimize_coalesce(real)
         self.assertEquals(expected_coalesced,real_coalesced)
 
     def test_replicates_recursive_but_dest_parent_is_not_snapshotted(self):
-        src = zfslib.PoolSet()
-        dst = zfslib.PoolSet()
+        src = PoolSet()
+        dst = PoolSet()
         src.parse_zfs_r_output(
 x('''s   98.8G   13.4G   30K     none
 s@1     0       -       3.37G   -
@@ -536,20 +536,20 @@ t/s/b@1     1363676402
              ),
             ] + expected[-1:]
 
-        real = zfslib.recursive_replicate(
+        real = sync.recursive_replicate(
             src.lookup("s"),
             dst.lookup("t/s")
         )
         self.assertEquals(expected,real)
 
-        real_coalesced = zfslib.optimize_coalesce(real)
+        real_coalesced = sync.optimize_coalesce(real)
         self.assertEquals(expected_coalesced,real_coalesced)
 
     # this test is the problematic one that causes the optimizer to fail when transforming it
     # into the recursive replication which shadows unsnapshotted children
     def test_replicates_recursive_and_child_of_replicant_has_no_snapshots(self):
-        src = zfslib.PoolSet()
-        dst = zfslib.PoolSet()
+        src = PoolSet()
+        dst = PoolSet()
         src.parse_zfs_r_output(
 x('''s   98.8G   13.4G   30K     none
 s@1     0       -       3.37G   -
@@ -725,23 +725,23 @@ t/s/b@1     1363676402
              ),
             ]
 
-        real = zfslib.recursive_replicate(
+        real = sync.recursive_replicate(
             src.lookup("s"),
             dst.lookup("t/s")
         )
         self.assertEquals(expected,real)
 
-        real_coalesced = zfslib.optimize_coalesce(real)
+        real_coalesced = sync.optimize_coalesce(real)
         self.assertEquals(expected_coalesced,real_coalesced)
 
-        real_coalesced_recursivized = zfslib.optimize_recursivize(real_coalesced)
+        real_coalesced_recursivized = sync.optimize_recursivize(real_coalesced)
         self.assertEquals(expected_coalesced_recursivized,real_coalesced_recursivized)
 
     # this test checks no recursivization happens
     # for create_stub
     def test_replicates_without_recursivizing_stub_creation(self):
-        src = zfslib.PoolSet()
-        dst = zfslib.PoolSet()
+        src = PoolSet()
+        dst = PoolSet()
         src.parse_zfs_r_output(
 x('''s   98.8G   13.4G   30K     none
 s/a  3.40G   13.4G   3.37G   /opt/plonezeo
@@ -801,22 +801,22 @@ t/s   1359351119
             ]
 
 
-        real = zfslib.recursive_replicate(
+        real = sync.recursive_replicate(
             src.lookup("s"),
             dst.lookup("t/s")
         )
         self.assertEquals(expected,real)
 
-        real_coalesced = zfslib.optimize_coalesce(real)
+        real_coalesced = sync.optimize_coalesce(real)
         self.assertEquals(expected_coalesced,real_coalesced)
 
-        real_coalesced_recursivized = zfslib.optimize_recursivize(real_coalesced)
+        real_coalesced_recursivized = sync.optimize_recursivize(real_coalesced)
         self.assertEquals(expected_coalesced_recursivized,real_coalesced_recursivized)
 
     # this test failed horribly, so we port it here for more compliance testing
     def test_replicates_complex_datasets(self):
-        src = zfslib.PoolSet()
-        dst = zfslib.PoolSet()
+        src = PoolSet()
+        dst = PoolSet()
         src.parse_zfs_r_output(
             x('karen\nkaren@zfs-auto-snap_monthly-2013-05-01-0300\nkaren@zfs-auto-snap_monthly-2013-06-01-0300\nkaren@zfs-auto-snap_monthly-2013-07-01-0300\nkaren@zfs-auto-snap_monthly-2013-08-01-0300\nkaren@zfs-auto-snap_daily-2013-08-24-0300\nkaren@zfs-auto-snap_daily-2013-08-25-0300\nkaren@zfs-auto-snap_daily-2013-08-26-0300\nkaren@zfs-auto-snap_daily-2013-08-27-0300\nkaren@zfs-auto-snap_daily-2013-08-28-0300\nkaren@zfs-auto-snap_daily-2013-08-29-0300\nkaren@zfs-auto-snap_hourly-2013-08-30-0100\nkaren@zfs-auto-snap_hourly-2013-08-30-0700\nkaren@zfs-auto-snap_daily-2013-08-30-1000\nkaren@zfs-auto-snap_hourly-2013-08-30-1300\nkaren@zfs-auto-snap_hourly-2013-08-30-1900\nkaren/ROOT\nkaren/ROOT@zfs-auto-snap_monthly-2013-05-01-0300\nkaren/ROOT@zfs-auto-snap_monthly-2013-06-01-0300\nkaren/ROOT@zfs-auto-snap_monthly-2013-07-01-0300\nkaren/ROOT@zfs-auto-snap_monthly-2013-08-01-0300\nkaren/ROOT@zfs-auto-snap_daily-2013-08-24-0300\nkaren/ROOT@zfs-auto-snap_daily-2013-08-25-0300\nkaren/ROOT@zfs-auto-snap_daily-2013-08-26-0300\nkaren/ROOT@zfs-auto-snap_daily-2013-08-27-0300\nkaren/ROOT@zfs-auto-snap_daily-2013-08-28-0300\nkaren/ROOT@zfs-auto-snap_daily-2013-08-29-0300\nkaren/ROOT@zfs-auto-snap_hourly-2013-08-30-0100\nkaren/ROOT@zfs-auto-snap_hourly-2013-08-30-0700\nkaren/ROOT@zfs-auto-snap_daily-2013-08-30-1000\nkaren/ROOT@zfs-auto-snap_hourly-2013-08-30-1300\nkaren/ROOT@zfs-auto-snap_hourly-2013-08-30-1900\nkaren/ROOT/fedora\nkaren/ROOT/fedora@zfs-auto-snap_monthly-2013-05-01-0300\nkaren/ROOT/fedora@zfs-auto-snap_monthly-2013-06-01-0300\nkaren/ROOT/fedora@zfs-auto-snap_monthly-2013-07-01-0300\nkaren/ROOT/fedora@zfs-auto-snap_monthly-2013-08-01-0300\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-24-0300\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-25-0300\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-26-0300\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-27-0300\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-28-0300\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-29-0300\nkaren/ROOT/fedora@zfs-auto-snap_hourly-2013-08-30-0100\nkaren/ROOT/fedora@zfs-auto-snap_hourly-2013-08-30-0700\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-30-1000\nkaren/ROOT/fedora@zfs-auto-snap_hourly-2013-08-30-1300\nkaren/ROOT/fedora@zfs-auto-snap_hourly-2013-08-30-1900\nkaren/ROOT/fedora/tmp\nkaren/home\nkaren/home@zfs-auto-snap_monthly-2013-05-01-0300\nkaren/home@zfs-auto-snap_monthly-2013-06-01-0300\nkaren/home@zfs-auto-snap_monthly-2013-07-01-0300\nkaren/home@zfs-auto-snap_monthly-2013-08-01-0300\nkaren/home@zfs-auto-snap_daily-2013-08-24-0300\nkaren/home@zfs-auto-snap_daily-2013-08-25-0300\nkaren/home@zfs-auto-snap_daily-2013-08-26-0300\nkaren/home@zfs-auto-snap_daily-2013-08-27-0300\nkaren/home@zfs-auto-snap_daily-2013-08-28-0300\nkaren/home@zfs-auto-snap_daily-2013-08-29-0300\nkaren/home@zfs-auto-snap_hourly-2013-08-30-0100\nkaren/home@zfs-auto-snap_hourly-2013-08-30-0700\nkaren/home@zfs-auto-snap_daily-2013-08-30-1000\nkaren/home@zfs-auto-snap_hourly-2013-08-30-1300\nkaren/home@zfs-auto-snap_hourly-2013-08-30-1900\nkaren/home/mail\nkaren/home/mail@zfs-auto-snap_monthly-2013-08-01-0300\nkaren/home/mail@zfs-auto-snap_daily-2013-08-24-0300\nkaren/home/mail@zfs-auto-snap_daily-2013-08-25-0300\nkaren/home/mail@zfs-auto-snap_daily-2013-08-26-0300\nkaren/home/mail@zfs-auto-snap_daily-2013-08-27-0300\nkaren/home/mail@zfs-auto-snap_daily-2013-08-28-0300\nkaren/home/mail@zfs-auto-snap_daily-2013-08-29-0300\nkaren/home/mail@zfs-auto-snap_hourly-2013-08-30-0100\nkaren/home/mail@zfs-auto-snap_hourly-2013-08-30-0700\nkaren/home/mail@zfs-auto-snap_daily-2013-08-30-1000\nkaren/home/mail@zfs-auto-snap_hourly-2013-08-30-1300\nkaren/home/mail@zfs-auto-snap_hourly-2013-08-30-1900\nkaren/plonezeo\nkaren/plonezeo@zfs-auto-snap_monthly-2013-05-01-0300\nkaren/plonezeo@zfs-auto-snap_monthly-2013-06-01-0300\nkaren/plonezeo@zfs-auto-snap_monthly-2013-07-01-0300\nkaren/plonezeo@zfs-auto-snap_monthly-2013-08-01-0300\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-24-0300\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-25-0300\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-26-0300\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-27-0300\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-28-0300\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-29-0300\nkaren/plonezeo@zfs-auto-snap_hourly-2013-08-30-0100\nkaren/plonezeo@zfs-auto-snap_hourly-2013-08-30-0700\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-30-1000\nkaren/plonezeo@zfs-auto-snap_hourly-2013-08-30-1300\nkaren/plonezeo@zfs-auto-snap_hourly-2013-08-30-1900\nkaren/sekrit\nkaren/sekrit/f-business\nkaren/sekrit/f-proxy\nkaren/sekrit/f-storefront\nkaren/sekrit/f-template\nkaren/sekrit/f-template@initialsetup\nkaren/sekrit/f-tinc\nkaren/sekrit/f-vpn\nkaren/sekrit/f-wallet\nkaren/swap\n'),
             x('karen\t1364533579\nkaren@zfs-auto-snap_monthly-2013-05-01-0300\t1367402402\nkaren@zfs-auto-snap_monthly-2013-06-01-0300\t1370080801\nkaren@zfs-auto-snap_monthly-2013-07-01-0300\t1372672801\nkaren@zfs-auto-snap_monthly-2013-08-01-0300\t1375351202\nkaren@zfs-auto-snap_daily-2013-08-24-0300\t1377338402\nkaren@zfs-auto-snap_daily-2013-08-25-0300\t1377424802\nkaren@zfs-auto-snap_daily-2013-08-26-0300\t1377511202\nkaren@zfs-auto-snap_daily-2013-08-27-0300\t1377597603\nkaren@zfs-auto-snap_daily-2013-08-28-0300\t1377684001\nkaren@zfs-auto-snap_daily-2013-08-29-0300\t1377770402\nkaren@zfs-auto-snap_hourly-2013-08-30-0100\t1377824401\nkaren@zfs-auto-snap_hourly-2013-08-30-0700\t1377846003\nkaren@zfs-auto-snap_daily-2013-08-30-1000\t1377856803\nkaren@zfs-auto-snap_hourly-2013-08-30-1300\t1377867602\nkaren@zfs-auto-snap_hourly-2013-08-30-1900\t1377889202\nkaren/ROOT\t1364534686\nkaren/ROOT@zfs-auto-snap_monthly-2013-05-01-0300\t1367402402\nkaren/ROOT@zfs-auto-snap_monthly-2013-06-01-0300\t1370080801\nkaren/ROOT@zfs-auto-snap_monthly-2013-07-01-0300\t1372672801\nkaren/ROOT@zfs-auto-snap_monthly-2013-08-01-0300\t1375351202\nkaren/ROOT@zfs-auto-snap_daily-2013-08-24-0300\t1377338402\nkaren/ROOT@zfs-auto-snap_daily-2013-08-25-0300\t1377424802\nkaren/ROOT@zfs-auto-snap_daily-2013-08-26-0300\t1377511202\nkaren/ROOT@zfs-auto-snap_daily-2013-08-27-0300\t1377597603\nkaren/ROOT@zfs-auto-snap_daily-2013-08-28-0300\t1377684001\nkaren/ROOT@zfs-auto-snap_daily-2013-08-29-0300\t1377770402\nkaren/ROOT@zfs-auto-snap_hourly-2013-08-30-0100\t1377824401\nkaren/ROOT@zfs-auto-snap_hourly-2013-08-30-0700\t1377846003\nkaren/ROOT@zfs-auto-snap_daily-2013-08-30-1000\t1377856803\nkaren/ROOT@zfs-auto-snap_hourly-2013-08-30-1300\t1377867602\nkaren/ROOT@zfs-auto-snap_hourly-2013-08-30-1900\t1377889202\nkaren/ROOT/fedora\t1364534686\nkaren/ROOT/fedora@zfs-auto-snap_monthly-2013-05-01-0300\t1367402402\nkaren/ROOT/fedora@zfs-auto-snap_monthly-2013-06-01-0300\t1370080801\nkaren/ROOT/fedora@zfs-auto-snap_monthly-2013-07-01-0300\t1372672801\nkaren/ROOT/fedora@zfs-auto-snap_monthly-2013-08-01-0300\t1375351202\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-24-0300\t1377338402\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-25-0300\t1377424802\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-26-0300\t1377511202\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-27-0300\t1377597603\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-28-0300\t1377684001\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-29-0300\t1377770402\nkaren/ROOT/fedora@zfs-auto-snap_hourly-2013-08-30-0100\t1377824401\nkaren/ROOT/fedora@zfs-auto-snap_hourly-2013-08-30-0700\t1377846003\nkaren/ROOT/fedora@zfs-auto-snap_daily-2013-08-30-1000\t1377856803\nkaren/ROOT/fedora@zfs-auto-snap_hourly-2013-08-30-1300\t1377867602\nkaren/ROOT/fedora@zfs-auto-snap_hourly-2013-08-30-1900\t1377889202\nkaren/ROOT/fedora/tmp\t1372565849\nkaren/home\t1364534798\nkaren/home@zfs-auto-snap_monthly-2013-05-01-0300\t1367402402\nkaren/home@zfs-auto-snap_monthly-2013-06-01-0300\t1370080801\nkaren/home@zfs-auto-snap_monthly-2013-07-01-0300\t1372672801\nkaren/home@zfs-auto-snap_monthly-2013-08-01-0300\t1375351202\nkaren/home@zfs-auto-snap_daily-2013-08-24-0300\t1377338402\nkaren/home@zfs-auto-snap_daily-2013-08-25-0300\t1377424802\nkaren/home@zfs-auto-snap_daily-2013-08-26-0300\t1377511202\nkaren/home@zfs-auto-snap_daily-2013-08-27-0300\t1377597603\nkaren/home@zfs-auto-snap_daily-2013-08-28-0300\t1377684001\nkaren/home@zfs-auto-snap_daily-2013-08-29-0300\t1377770402\nkaren/home@zfs-auto-snap_hourly-2013-08-30-0100\t1377824401\nkaren/home@zfs-auto-snap_hourly-2013-08-30-0700\t1377846003\nkaren/home@zfs-auto-snap_daily-2013-08-30-1000\t1377856803\nkaren/home@zfs-auto-snap_hourly-2013-08-30-1300\t1377867602\nkaren/home@zfs-auto-snap_hourly-2013-08-30-1900\t1377889202\nkaren/home/mail\t1374752037\nkaren/home/mail@zfs-auto-snap_monthly-2013-08-01-0300\t1375351202\nkaren/home/mail@zfs-auto-snap_daily-2013-08-24-0300\t1377338402\nkaren/home/mail@zfs-auto-snap_daily-2013-08-25-0300\t1377424802\nkaren/home/mail@zfs-auto-snap_daily-2013-08-26-0300\t1377511202\nkaren/home/mail@zfs-auto-snap_daily-2013-08-27-0300\t1377597603\nkaren/home/mail@zfs-auto-snap_daily-2013-08-28-0300\t1377684001\nkaren/home/mail@zfs-auto-snap_daily-2013-08-29-0300\t1377770402\nkaren/home/mail@zfs-auto-snap_hourly-2013-08-30-0100\t1377824401\nkaren/home/mail@zfs-auto-snap_hourly-2013-08-30-0700\t1377846003\nkaren/home/mail@zfs-auto-snap_daily-2013-08-30-1000\t1377856803\nkaren/home/mail@zfs-auto-snap_hourly-2013-08-30-1300\t1377867602\nkaren/home/mail@zfs-auto-snap_hourly-2013-08-30-1900\t1377889202\nkaren/plonezeo\t1364535620\nkaren/plonezeo@zfs-auto-snap_monthly-2013-05-01-0300\t1367402402\nkaren/plonezeo@zfs-auto-snap_monthly-2013-06-01-0300\t1370080801\nkaren/plonezeo@zfs-auto-snap_monthly-2013-07-01-0300\t1372672801\nkaren/plonezeo@zfs-auto-snap_monthly-2013-08-01-0300\t1375351202\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-24-0300\t1377338402\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-25-0300\t1377424802\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-26-0300\t1377511202\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-27-0300\t1377597603\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-28-0300\t1377684001\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-29-0300\t1377770402\nkaren/plonezeo@zfs-auto-snap_hourly-2013-08-30-0100\t1377824401\nkaren/plonezeo@zfs-auto-snap_hourly-2013-08-30-0700\t1377846003\nkaren/plonezeo@zfs-auto-snap_daily-2013-08-30-1000\t1377856803\nkaren/plonezeo@zfs-auto-snap_hourly-2013-08-30-1300\t1377867602\nkaren/plonezeo@zfs-auto-snap_hourly-2013-08-30-1900\t1377889202\nkaren/sekrit\t1371440813\nkaren/sekrit/f-business\t1371456850\nkaren/sekrit/f-proxy\t1371456866\nkaren/sekrit/f-storefront\t1371456856\nkaren/sekrit/f-template\t1371440847\nkaren/sekrit/f-template@initialsetup\t1371456786\nkaren/sekrit/f-tinc\t1371456889\nkaren/sekrit/f-vpn\t1371456860\nkaren/sekrit/f-wallet\t1371456846\nkaren/swap\t1368951906\n')
@@ -1210,16 +1210,16 @@ t/s   1359351119
    src.lookup("karen/sekrit/f-template@initialsetup")),
             ]
 
-        real = zfslib.recursive_replicate(
+        real = sync.recursive_replicate(
             src.lookup("karen"),
             dst.lookup("backup/karen.dragonfear/karen")
         )
         self.assertEquals(expected,real)
 
-        real_coalesced = zfslib.optimize_coalesce(real)
+        real_coalesced = sync.optimize_coalesce(real)
         self.assertEquals(expected_coalesced,real_coalesced)
 
-        real_coalesced_recursivized = zfslib.optimize_recursivize(real_coalesced)
+        real_coalesced_recursivized = sync.optimize_recursivize(real_coalesced)
         self.assertEquals(expected_coalesced_recursivized,real_coalesced_recursivized)
 
 

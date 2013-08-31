@@ -1,8 +1,10 @@
 '''
-Created on Mar 19, 2013
-
-@author: rudd-o
+Miscellaneous utility functions
 '''
+
+import sys
+import os
+import subprocess
 
 def simplify(x):
     '''Take a list of tuples where each tuple is in form [v1,v2,...vn]
@@ -48,3 +50,46 @@ def uniq(seq, idfun=None):
         result.append(item)
     return result
 
+def progressbar(pipe, bufsize=-1, ratelimit=-1):
+
+    def clpbar(cmdname):
+        barargs = []
+        if bufsize != -1:
+            barargs = ["-bs", str(bufsize)]
+        if ratelimit != -1:
+            barargs = barargs + ['-th', str(ratelimit)]
+        barprg = subprocess.Popen(
+            [cmdname, "-dan"] + barargs,
+            stdin=pipe, stdout=subprocess.PIPE, bufsize=bufsize)
+        return barprg
+
+    def pv(cmdname):
+        barargs = []
+        if bufsize != -1:
+            barargs = ["-B", str(bufsize)]
+        if ratelimit != -1:
+            barargs = barargs + ['-L', str(ratelimit)]
+        barprg = subprocess.Popen(
+            [cmdname, "-ptrb"] + barargs,
+            stdin=pipe, stdout=subprocess.PIPE, bufsize=bufsize)
+        return barprg
+
+    barprograms = [
+        ("bar", clpbar),
+        ("clpbar", clpbar),
+        ("pv", pv),
+    ]
+
+    for name, func in barprograms:
+        try:
+            subprocess.call([name, '-h'], stdout=file(os.devnull, "w"), stderr=file(os.devnull, "w"), stdin=file(os.devnull, "r"))
+        except OSError, e:
+            if e.errno == 2: continue
+            assert 0, "not reached while searching for clpbar or pv"
+        return func(name)
+    raise OSError(2, "no such file or directory searching for clpbar or pv")
+
+def stderr(text):
+    """print out something to standard error, followed by an ENTER"""
+    sys.stderr.write(text)
+    sys.stderr.write("\n")

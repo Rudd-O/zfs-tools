@@ -1,12 +1,9 @@
 '''
-Created on Mar 19, 2013
-
-@author: rudd-o
+Tests for the zfstools.util module
 '''
 import unittest
-import sys, os
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-import zfsutils
+from zfstools import util as zfsutils
+
 
 class TestSimplify(unittest.TestCase):
 
