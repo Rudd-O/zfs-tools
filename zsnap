@@ -54,7 +54,7 @@ print "Snapshotting dataset %s:%s"%(source_host,source_dataset_name)
 src_conn.snapshot_recursively(source_dataset_name,snapshot_unique_name)
 src_conn.pools # trigger update
 
-ssn = sorted([ (x.creation(), x.name, x) for x in source_dataset.get_snapshots(flt) ])
+ssn = sorted([ (x.get_creation(), x.name, x) for x in source_dataset.get_snapshots(flt) ])
 
 for x in ssn[:-keep]:
 	print "Destroying obsolete snapshot: %s"%(x[-1].get_path())
