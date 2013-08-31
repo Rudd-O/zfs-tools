@@ -1,12 +1,8 @@
-zfslib.pyc: zfslib.py
-	python -c 'import compileall ; compileall.compile_dir(dir=".",quiet=True)'
-
 install:
-	mkdir -p $(DESTDIR)/usr/bin $(DESTDIR)/usr/lib/pymodules/python2.6
-	cp zfs-fetch-pool zfs-shell zsnap zreplicate $(DESTDIR)/usr/bin
-	cp zfslib.py zfslib.pyc $(DESTDIR)/usr/lib/pymodules/python2.6
+        python setup.py bdist_dumb
+        tar -C $(DESTDIR) zxvmf dist/zfs-tools-*.linux-*.tar.gz
 	mkdir -p $(DESTDIR)/etc/sudoers.d
-	cp sudoers.zfs-tools $(DESTDIR)/etc/sudoers.d/zfs-tools
+	cp contrib/sudoers.zfs-tools $(DESTDIR)/etc/sudoers.d/zfs-tools
 	chmod 440 $(DESTDIR)/etc/sudoers.d/zfs-tools
 
 .PHONY = install

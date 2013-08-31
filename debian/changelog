@@ -1,3 +1,9 @@
+zfs-tools (0.4.0ubuntu1) raring; urgency=low
+
+  * engineer around python's distutils
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Fri, 30 Aug 2013 23:35:49 -0800
+
 zfs-tools (0.2.7ubuntu1) lucid; urgency=low
 
   * use select to wait for zfs send and receive

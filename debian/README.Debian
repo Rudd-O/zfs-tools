@@ -1,6 +1,7 @@
 zfs-tools for Debian
 --------------------
 
-<possible notes regarding this package - if none, delete this file>
+We use distutils to generate a "bdist_dumb" package to install on the system.
+Then we package that, with a few other niceties.
 
  -- Manuel Amador <rudd-o@rudd-o.com>  Mon, 30 Apr 2012 22:00:22 +0000
