@@ -328,7 +328,7 @@ class ZFSConnection:
 	pools = property(_get_poolset)
 
 	def create_dataset(self,name):
-		run_command(self.command+["create","-o","mountpoint=none",name])
+		run_command(self.command+["create",name])
 		self._dirty = True
 		return self.pools.lookup(name)
 
@@ -432,8 +432,9 @@ def recursive_replicate(s,d):
     # we have combed through the snapshot pairs
     # time to check what the latest common pair is
     if not s.get_snapshots():
-        # well, no snapshots in source, do nothing
-        pass
+        if d is None:
+            # well, no snapshots in source, just create a stub in the target
+            sched.append(("create_stub",s,d,None,None))
     elif found_common_pair is False:
         # no snapshot is in common, problem!
         # theoretically destroying destination dataset and resyncing it recursively would work
@@ -477,6 +478,8 @@ def optimize_coalesce(operation_schedule):
         if not opgroup: # empty opgroup
             continue
         if opgroup[0][0] == 'full': # full operations
+            new.extend(opgroup)
+        elif opgroup[0][0] == 'create_stub': # create stub operations
             new.extend(opgroup)
         elif opgroup[0][0] == 'incremental': # incremental
             # 1->2->3->4 => 1->4
@@ -538,14 +541,23 @@ def optimize_recursivize(operation_schedule):
         # we can say that they are "the same"
         comparisons = [
                 all([
+                    # never attempt to recursivize operations who involve create_stub
+                    all(["create_stub" not in o[0] for o in ops]),
                     len(set([o[0] for o in ops])) == 1,
                     any([o[3] is None for o in ops]) or len(set([o[3].name for o in ops])) == 1,
-                    len(set([o[4].name for o in ops])) == 1,
+                    any([o[4] is None for o in ops]) or len(set([o[4].name for o in ops])) == 1,
                 ])
                 for ops
                 in zip(*ops_schedules)
         ]
         return all(comparisons)
+
+    # remove unnecessary stubs that stand in for only other stubs
+    for root in roots:
+        for dataset, _ in recurse(root, lambda d: d):
+            ops = [z for x,y in recurse(dataset, lambda d: d._ops_schedule) for z in y]
+            if all([o[0] == 'create_stub' for o in ops]):
+               dataset._ops_schedule = []
 
     for root in roots:
         for dataset, _ in recurse(root, lambda d: d):

@@ -422,6 +422,12 @@ t/s/b@1     1363676402
               src.lookup("s/b@2"),
               src.lookup("s/b@3")
              ),
+             ('create_stub',
+              src.lookup("s/c"),
+              None,
+              None,
+              None
+             ),
             ]
         expected_coalesced = expected[0:2] + \
             [
@@ -431,7 +437,7 @@ t/s/b@1     1363676402
               src.lookup("s/b@1"),
               src.lookup("s/b@3")
              ),
-            ]
+            ] + expected[-1:]
         
         real = zfslib.recursive_replicate(
             src.lookup("s"),
@@ -513,6 +519,12 @@ t/s/b@1     1363676402
               src.lookup("s/b@2"),
               src.lookup("s/b@3")
              ),
+             ('create_stub',
+              src.lookup("s/c"),
+              None,
+              None,
+              None
+             ),
             ]
         expected_coalesced = expected[0:2] + \
             [
@@ -522,7 +534,7 @@ t/s/b@1     1363676402
               src.lookup("s/b@1"),
               src.lookup("s/b@3")
              ),
-            ]
+            ] + expected[-1:]
 
         real = zfslib.recursive_replicate(
             src.lookup("s"),
@@ -651,6 +663,18 @@ t/s/b@1     1363676402
               src.lookup("s/b@2"),
               src.lookup("s/b@3")
              ),
+             ('create_stub',
+              src.lookup("s/b/x"),
+              None,
+              None,
+              None
+             ),
+             ('create_stub',
+              src.lookup("s/c"),
+              None,
+              None,
+              None
+             ),
             ]
         expected_coalesced = \
             [
@@ -678,7 +702,7 @@ t/s/b@1     1363676402
               src.lookup("s/b@1"),
               src.lookup("s/b@3")
              ),
-            ] # FIXME implement full_recursive
+            ] + expected[-2:]
         expected_coalesced_recursivized = \
             [
              ('incremental',
@@ -700,6 +724,82 @@ t/s/b@1     1363676402
               src.lookup("s/b@3")
              ),
             ]
+
+        real = zfslib.recursive_replicate(
+            src.lookup("s"),
+            dst.lookup("t/s")
+        )
+        self.assertEquals(expected,real)
+
+        real_coalesced = zfslib.optimize_coalesce(real)
+        self.assertEquals(expected_coalesced,real_coalesced)
+
+        real_coalesced_recursivized = zfslib.optimize_recursivize(real_coalesced)
+        self.assertEquals(expected_coalesced_recursivized,real_coalesced_recursivized)
+
+    # this test checks no recursivization happens
+    # for create_stub
+    def test_replicates_without_recursivizing_stub_creation(self):
+        src = zfslib.PoolSet()
+        dst = zfslib.PoolSet()
+        src.parse_zfs_r_output(
+x('''s   98.8G   13.4G   30K     none
+s/a  3.40G   13.4G   3.37G   /opt/plonezeo
+s/a/x  3.40G   13.4G   3.37G   /opt/plonezeo
+s/a/x/t  3.40G   13.4G   3.37G   /opt/plonezeo
+s/a/x/t@1     0       -       3.37G   -
+s/a/x/t@2     0       -       3.37G   -
+s/a/x/t@3     0       -       3.37G   -
+'''),
+x('''s   1359351119
+s/a  1360136643
+s/a/x  1360136643
+s/a/x/t  1360136643
+s/a/x/t@1     1363676402
+s/a/x/t@2     1363686403
+s/a/x/t@3     1363686404
+''')
+        )
+        dst.parse_zfs_r_output(
+x('''t   98.8G   13.4G   30K     none
+t/s   98.8G   13.4G   30K     none
+'''),
+x('''t   1359351109
+t/s   1359351119
+''')
+        )
+        expected = \
+            [
+             ('create_stub',
+              src.lookup("s/a"),
+              None,
+              None,
+              None
+             ),
+             ('create_stub',
+              src.lookup("s/a/x"),
+              None,
+              None,
+              None
+             ),
+             ('full',
+              src.lookup("s/a/x/t"),
+              None,
+              None,
+              src.lookup("s/a/x/t@3")
+             ),
+            ]
+        expected_coalesced = expected
+        expected_coalesced_recursivized = expected_coalesced[:-1] + \
+            [
+             ('full_recursive',
+              src.lookup("s/a/x/t"),
+              None,
+              None,
+              src.lookup("s/a/x/t@3")
+             ),
+            ]
+
 
         real = zfslib.recursive_replicate(
             src.lookup("s"),
@@ -832,6 +932,11 @@ t/s/b@1     1363676402
    dst.lookup("backup/karen.dragonfear/karen/ROOT/fedora"),
    src.lookup("karen/ROOT/fedora@zfs-auto-snap_hourly-2013-08-30-1300"),
    src.lookup("karen/ROOT/fedora@zfs-auto-snap_hourly-2013-08-30-1900")),
+  ('create_stub',
+   src.lookup("karen/ROOT/fedora/tmp"),
+   None,
+   None,
+   None),
   ('incremental',
    src.lookup("karen/home"),
    dst.lookup("backup/karen.dragonfear/karen/home"),
@@ -937,11 +1042,51 @@ t/s/b@1     1363676402
    dst.lookup("backup/karen.dragonfear/karen/plonezeo"),
    src.lookup("karen/plonezeo@zfs-auto-snap_hourly-2013-08-30-1300"),
    src.lookup("karen/plonezeo@zfs-auto-snap_hourly-2013-08-30-1900")),
+  ('create_stub',
+   src.lookup("karen/sekrit"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-business"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-proxy"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-storefront"),
+   None,
+   None,
+   None),
   ('full',
    src.lookup("karen/sekrit/f-template"),
    None,
    None,
    src.lookup("karen/sekrit/f-template@initialsetup")),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-tinc"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-vpn"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-wallet"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/swap"),
+   None,
+   None,
+   None),
             ]
         expected_coalesced = \
             [
@@ -960,6 +1105,11 @@ t/s/b@1     1363676402
    dst.lookup("backup/karen.dragonfear/karen/ROOT/fedora"),
    src.lookup("karen/ROOT/fedora@zfs-auto-snap_daily-2013-08-27-0300"),
    src.lookup("karen/ROOT/fedora@zfs-auto-snap_hourly-2013-08-30-1900")),
+  ('create_stub',
+   src.lookup("karen/ROOT/fedora/tmp"),
+   None,
+   None,
+   None),
   ('incremental',
    src.lookup("karen/home"),
    dst.lookup("backup/karen.dragonfear/karen/home"),
@@ -975,11 +1125,51 @@ t/s/b@1     1363676402
    dst.lookup("backup/karen.dragonfear/karen/plonezeo"),
    src.lookup("karen/plonezeo@zfs-auto-snap_daily-2013-08-27-0300"),
    src.lookup("karen/plonezeo@zfs-auto-snap_hourly-2013-08-30-1900")),
+  ('create_stub',
+   src.lookup("karen/sekrit"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-business"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-proxy"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-storefront"),
+   None,
+   None,
+   None),
   ('full',
    src.lookup("karen/sekrit/f-template"),
    None,
    None,
    src.lookup("karen/sekrit/f-template@initialsetup")),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-tinc"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-vpn"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/sekrit/f-wallet"),
+   None,
+   None,
+   None),
+  ('create_stub',
+   src.lookup("karen/swap"),
+   None,
+   None,
+   None),
             ]
         expected_coalesced_recursivized = \
             [
@@ -1008,6 +1198,11 @@ t/s/b@1     1363676402
    dst.lookup("backup/karen.dragonfear/karen/plonezeo"),
    src.lookup("karen/plonezeo@zfs-auto-snap_daily-2013-08-27-0300"),
    src.lookup("karen/plonezeo@zfs-auto-snap_hourly-2013-08-30-1900")),
+  ('create_stub',
+   src.lookup("karen/sekrit"),
+   None,
+   None,
+   None),
   ('full_recursive',
    src.lookup("karen/sekrit/f-template"),
    None,
