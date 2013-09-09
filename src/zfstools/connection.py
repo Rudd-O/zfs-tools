@@ -90,14 +90,14 @@ class ZFSConnection:
                 if sndprg.pid != barprg.pid: os.kill(barprg.pid, 15)
                 raise
 
-                dst_conn._dirty = True
-                if showprogress:
-                        sendret, barret, rcvret = sndprg.wait(), barprg.wait(), rcvprg.wait()
-                else:
-                        sendret, barret, rcvret = sndprg.wait(), 0, rcvprg.wait()
-                if sendret:
-                        raise subprocess.CalledProcessError(sendret, ["zfs", "send"])
-                if barret:
-                        raise subprocess.CalledProcessError(barret, ["clpbar"])
-                if rcvret:
-                        raise subprocess.CalledProcessError(rcvret, ["zfs", "recv"])
+        dst_conn._dirty = True
+        if showprogress:
+            sendret, barret, rcvret = sndprg.wait(), barprg.wait(), rcvprg.wait()
+        else:
+            sendret, barret, rcvret = sndprg.wait(), 0, rcvprg.wait()
+        if sendret:
+            raise subprocess.CalledProcessError(sendret, ["zfs", "send"])
+        if barret:
+            raise subprocess.CalledProcessError(barret, ["clpbar"])
+        if rcvret:
+            raise subprocess.CalledProcessError(rcvret, ["zfs", "recv"])
