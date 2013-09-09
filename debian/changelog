@@ -1,3 +1,9 @@
+zfs-tools (0.4.1ubuntu1) raring; urgency=low
+
+  * fix indentation bug causing multiple syncs in parallel
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Sun, 08 Sep 2013 19:22:41 -0800
+
 zfs-tools (0.4.0ubuntu1) raring; urgency=low
 
   * engineer around python's distutils
