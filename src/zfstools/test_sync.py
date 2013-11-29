@@ -1223,6 +1223,283 @@ t/s   1359351119
         self.assertEquals(expected_coalesced_recursivized,real_coalesced_recursivized)
 
 
+class TestRecursiveClearObsolete(unittest.TestCase):
+
+    maxDiff = None
+
+    def test_does_nothing(self):
+        src = PoolSet()
+        dst = PoolSet()
+        src.parse_zfs_r_output(
+x('''karen   98.8G   13.4G   30K     none
+karen/ROOT      95.2G   13.4G   30K     none
+karen/ROOT/fedora       95.2G   13.4G   6.08G   /
+karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
+karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
+'''),
+x('''karen   1359351119
+karen/ROOT      1359351169
+karen/ROOT/fedora       1359351172
+karen/ROOT/fedora/home  1359351174
+karen/plonezeo  1360136643
+''')
+        )
+        dst.parse_zfs_r_output(
+x('''target   98.8G   13.4G   30K     none
+target/karen   98.8G   13.4G   30K     none
+target/karen/ROOT      95.2G   13.4G   30K     none
+target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
+target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
+target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
+'''),
+x('''target   1359351109
+target/karen   1359351119
+target/karen/ROOT      1359351169
+target/karen/ROOT/fedora       1359351172
+target/karen/ROOT/fedora/home  1359351174
+target/karen/plonezeo  1360136643
+''')
+        )
+
+        result = sync.recursive_clear_obsolete(
+            src.lookup("karen"),
+            dst.lookup("target/karen")
+        )
+        self.assertFalse(result)
+
+    def test_clears_nothing(self):
+        src = PoolSet()
+        dst = PoolSet()
+        src.parse_zfs_r_output(
+x('''karen   98.8G   13.4G   30K     none
+karen/ROOT      95.2G   13.4G   30K     none
+karen/ROOT/fedora       95.2G   13.4G   6.08G   /
+karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
+karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
+karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
+'''),
+x('''karen   1359351119
+karen/ROOT      1359351169
+karen/ROOT/fedora       1359351172
+karen/ROOT/fedora/home  1359351174
+karen/plonezeo  1360136643
+karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
+''')
+        )
+        dst.parse_zfs_r_output(
+x('''target   98.8G   13.4G   30K     none
+target/karen   98.8G   13.4G   30K     none
+target/karen/ROOT      95.2G   13.4G   30K     none
+target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
+target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
+target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
+'''),
+x('''target   1359351109
+target/karen   1359351119
+target/karen/ROOT      1359351169
+target/karen/ROOT/fedora       1359351172
+target/karen/ROOT/fedora/home  1359351174
+target/karen/plonezeo  1360136643
+''')
+        )
+
+        result = sync.recursive_clear_obsolete(
+            src.lookup("karen"),
+            dst.lookup("target/karen")
+        )
+        self.assertFalse(result)
+
+    def test_clears_one(self):
+        src = PoolSet()
+        dst = PoolSet()
+        src.parse_zfs_r_output(
+x('''karen   98.8G   13.4G   30K     none
+karen/ROOT      95.2G   13.4G   30K     none
+karen/ROOT/fedora       95.2G   13.4G   6.08G   /
+karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
+karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
+'''),
+x('''karen   1359351119
+karen/ROOT      1359351169
+karen/ROOT/fedora       1359351172
+karen/ROOT/fedora/home  1359351174
+karen/plonezeo  1360136643
+''')
+        )
+        dst.parse_zfs_r_output(
+x('''target   98.8G   13.4G   30K     none
+target/karen   98.8G   13.4G   30K     none
+target/karen/ROOT      95.2G   13.4G   30K     none
+target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
+target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
+target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
+'''),
+x('''target   1359351109
+target/karen   1359351119
+target/karen/ROOT      1359351169
+target/karen/ROOT/fedora       1359351172
+target/karen/ROOT/fedora/home  1359351174
+target/karen/plonezeo  1360136643
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
+''')
+        )
+
+        result = sync.recursive_clear_obsolete(
+            src.lookup("karen"),
+            dst.lookup("target/karen")
+        )
+        self.assertEquals(len(result),1)
+        self.assertEquals(result[0][0], 'destroy')
+        self.assertEquals(result[0][1].get_path(), 'target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000')
+
+    def test_clears_three(self):
+        src = PoolSet()
+        dst = PoolSet()
+        src.parse_zfs_r_output(
+x('''karen   98.8G   13.4G   30K     none
+karen/ROOT      95.2G   13.4G   30K     none
+karen/ROOT@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
+karen/ROOT/fedora       95.2G   13.4G   6.08G   /
+karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
+karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
+karen/plonezeo@zfs-auto-snap_hourly-2013-03-20-0000     0       -       3.37G   -
+'''),
+x('''karen   1359351119
+karen/ROOT      1359351169
+karen/ROOT@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
+karen/ROOT/fedora       1359351172
+karen/ROOT/fedora/home  1359351174
+karen/plonezeo  1360136643
+karen/plonezeo@zfs-auto-snap_hourly-2013-03-20-0000     1363676402
+''')
+        )
+        dst.parse_zfs_r_output(
+x('''target   98.8G   13.4G   30K     none
+target/karen   98.8G   13.4G   30K     none
+target/karen/ROOT      95.2G   13.4G   30K     none
+target/karen/ROOT@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
+target/karen/ROOT@zfs-auto-snap_hourly-2013-03-20-0000     0       -       3.37G   -
+target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
+target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
+target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-20-0000     0       -       3.37G   -
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-21-0000     0       -       3.37G   -
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-22-0000     0       -       3.37G   -
+'''),
+x('''target   1359351109
+target/karen   1359351119
+target/karen/ROOT      1359351169
+target/karen/ROOT@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
+target/karen/ROOT@zfs-auto-snap_hourly-2013-03-20-0000     1363676402
+target/karen/ROOT/fedora       1359351172
+target/karen/ROOT/fedora/home  1359351174
+target/karen/plonezeo  1360136643
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-20-0000     1363676402
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-21-0000     1363676402
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-22-0000     1363676402
+''')
+        )
+
+        result = sync.recursive_clear_obsolete(
+            src.lookup("karen"),
+            dst.lookup("target/karen")
+        )
+        self.assertEquals(len(result),3)
+        dsets = [ r[1].get_path() for r in result ]
+        for p in [
+            'target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-21-0000',
+            'target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-22-0000',
+            'target/karen/ROOT@zfs-auto-snap_hourly-2013-03-20-0000',
+        ]:
+            self.assertTrue(p in dsets, "%r could not be found in %r" % (p, dsets))
+
+    def test_destroys_one_dataset_recursively(self):
+        src = PoolSet()
+        dst = PoolSet()
+        src.parse_zfs_r_output(
+x('''karen   98.8G   13.4G   30K     none
+karen/ROOT      95.2G   13.4G   30K     none
+karen/ROOT/fedora       95.2G   13.4G   6.08G   /
+karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
+'''),
+x('''karen   1359351119
+karen/ROOT      1359351169
+karen/ROOT/fedora       1359351172
+karen/ROOT/fedora/home  1359351174
+''')
+        )
+        dst.parse_zfs_r_output(
+x('''target   98.8G   13.4G   30K     none
+target/karen   98.8G   13.4G   30K     none
+target/karen/ROOT      95.2G   13.4G   30K     none
+target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
+target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
+target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
+'''),
+x('''target   1359351109
+target/karen   1359351119
+target/karen/ROOT      1359351169
+target/karen/ROOT/fedora       1359351172
+target/karen/ROOT/fedora/home  1359351174
+target/karen/plonezeo  1360136643
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
+''')
+        )
+
+        result = sync.recursive_clear_obsolete(
+            src.lookup("karen"),
+            dst.lookup("target/karen")
+        )
+        self.assertEquals(
+            result,
+            [
+              ('destroy_recursively', dst.lookup("target/karen/plonezeo")),
+            ]
+        )
+
+    def test_destroys_all_datasets_recursively(self):
+        src = PoolSet()
+        dst = PoolSet()
+        src.parse_zfs_r_output(
+x('''karen   98.8G   13.4G   30K     none
+'''),
+x('''karen   1359351119
+''')
+        )
+        dst.parse_zfs_r_output(
+x('''target   98.8G   13.4G   30K     none
+target/karen   98.8G   13.4G   30K     none
+target/karen/ROOT      95.2G   13.4G   30K     none
+target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
+target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
+target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
+'''),
+x('''target   1359351109
+target/karen   1359351119
+target/karen/ROOT      1359351169
+target/karen/ROOT/fedora       1359351172
+target/karen/ROOT/fedora/home  1359351174
+target/karen/plonezeo  1360136643
+target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
+''')
+        )
+
+        result = sync.recursive_clear_obsolete(
+            src.lookup("karen"),
+            dst.lookup("target/karen")
+        )
+        self.assertEquals(
+            result,
+            [
+              ('destroy_recursively', dst.lookup("target/karen/ROOT")),
+              ('destroy_recursively', dst.lookup("target/karen/plonezeo")),
+            ]
+        )
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

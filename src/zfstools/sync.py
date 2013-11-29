@@ -191,3 +191,34 @@ def optimize(operation_schedule):
     operation_schedule = optimize_coalesce(operation_schedule)
     operation_schedule = optimize_recursivize(operation_schedule)
     return operation_schedule
+
+# we walk the entire dataset structure, and sync snapshots recursively
+def recursive_clear_obsolete(s, d):
+    sched = []
+
+    # we first collect all snapshot names, to later see if they are on both sides, one side, or what
+    all_snapshots = []
+    snapshots_in_src = set([ m.name for m in s.get_snapshots() ])
+    snapshots_in_dst = set([ m.name for m in d.get_snapshots() ])
+
+    snapshots_to_delete = snapshots_in_dst - snapshots_in_src
+    snapshots_to_delete = [ d.get_snapshot(m) for m in snapshots_to_delete ]
+
+    for m in snapshots_to_delete:
+        sched.append(("destroy", m))
+
+    # now let's apply the same argument to the children
+    children_sched = []
+    for child_d in [ x for x in d.children if not isinstance(x, Snapshot) ]:
+        child_s = None
+
+        try:
+            child_s = s.get_child(child_d.name)
+        except (KeyError, AttributeError):
+            children_sched.append(("destroy_recursively", child_d))
+
+        if child_s:
+            children_sched.extend(recursive_clear_obsolete(child_s, child_d))
+
+    # and return our schedule of operations to the parent
+    return sched + children_sched
