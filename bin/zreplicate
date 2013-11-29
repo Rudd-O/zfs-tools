@@ -81,8 +81,6 @@ if opts.verbose:
 
 verbose_stderr("=================================")
 for op,src,dst,srcs,dsts in optimized_operation_schedule:
-        #assert 0, (op,src,dst,srcs,dsts)
-
         source_dataset_path = src.get_path()
 
         if dst:
