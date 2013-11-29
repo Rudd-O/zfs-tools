@@ -499,6 +499,12 @@ t/s/b@1     1363676402
               src.lookup("s"),
               dst.lookup("t/s"),
               None,
+              src.lookup("s@1")
+             ),
+             ('incremental',
+              src.lookup("s"),
+              dst.lookup("t/s"),
+              src.lookup("s@1"),
               src.lookup("s@2")
              ),
              ('incremental',
@@ -526,7 +532,7 @@ t/s/b@1     1363676402
               None
              ),
             ]
-        expected_coalesced = expected[0:2] + \
+        expected_coalesced = expected[0:3] + \
             [
              ('incremental',
               src.lookup("s/b"),
@@ -786,16 +792,28 @@ t/s   1359351119
               src.lookup("s/a/x/t"),
               None,
               None,
+              src.lookup("s/a/x/t@1")
+             ),
+             ('incremental',
+              src.lookup("s/a/x/t"),
+              None,
+              src.lookup("s/a/x/t@1"),
               src.lookup("s/a/x/t@3")
              ),
             ]
         expected_coalesced = expected
-        expected_coalesced_recursivized = expected_coalesced[:-1] + \
+        expected_coalesced_recursivized = expected_coalesced[:-2] + \
             [
              ('full_recursive',
               src.lookup("s/a/x/t"),
               None,
               None,
+              src.lookup("s/a/x/t@1")
+             ),
+             ('incremental_recursive',
+              src.lookup("s/a/x/t"),
+              None,
+              src.lookup("s/a/x/t@1"),
               src.lookup("s/a/x/t@3")
              ),
             ]

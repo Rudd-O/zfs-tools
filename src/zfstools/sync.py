@@ -49,7 +49,13 @@ def recursive_replicate(s, d):
         # but this requires work in the optimizer that comes later
         if d is not None and d.get_snapshots():
             warnings.warn("Asked to replicate %s into %s but %s has snapshots and both have no snapshots in common!" % (s, d, d))
-        sched.append(("full", s, d, None, snapshot_pairs[-1][0]))
+        # see source snapshots
+        full_source_snapshots = [ y[1] for y in sorted([ (x.get_creation(), x) for x in s.get_snapshots() ]) ]
+        # send first snapshot as full snapshot
+        sched.append(("full", s, d, None, full_source_snapshots[0]))
+        if len(full_source_snapshots) > 1:
+            # send other snapshots as incremental snapshots
+            sched.append(("incremental", s, d, full_source_snapshots[0], full_source_snapshots[-1]))
     elif found_common_pair == len(snapshot_pairs) - 1:
         # the latest snapshot of both datasets that is common to both, is the latest snapshot in the source
         # we have nothing to do here because the datasets are "in sync"
