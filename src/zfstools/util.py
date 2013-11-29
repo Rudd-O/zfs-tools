@@ -50,6 +50,13 @@ def uniq(seq, idfun=None):
         result.append(item)
     return result
 
+
+class SpecialPopen(subprocess.Popen):
+    def __init__(self, *a, **kw):
+        self._saved_args = a[0] if kw.get("args") is None else kw.get("args")
+        subprocess.Popen.__init__(self, *a, **kw)
+
+
 def progressbar(pipe, bufsize=-1, ratelimit=-1):
 
     def clpbar(cmdname):
@@ -58,7 +65,7 @@ def progressbar(pipe, bufsize=-1, ratelimit=-1):
             barargs = ["-bs", str(bufsize)]
         if ratelimit != -1:
             barargs = barargs + ['-th', str(ratelimit)]
-        barprg = subprocess.Popen(
+        barprg = SpecialPopen(
             [cmdname, "-dan"] + barargs,
             stdin=pipe, stdout=subprocess.PIPE, bufsize=bufsize)
         return barprg
@@ -69,7 +76,7 @@ def progressbar(pipe, bufsize=-1, ratelimit=-1):
             barargs = ["-B", str(bufsize)]
         if ratelimit != -1:
             barargs = barargs + ['-L', str(ratelimit)]
-        barprg = subprocess.Popen(
+        barprg = SpecialPopen(
             [cmdname, "-ptrb"] + barargs,
             stdin=pipe, stdout=subprocess.PIPE, bufsize=bufsize)
         return barprg
