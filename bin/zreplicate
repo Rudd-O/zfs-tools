@@ -72,6 +72,32 @@ except KeyError:
 	stderr("Error: the destination dataset does not exist.  Backup cannot continue.")
 	sys.exit(2)
 
+if opts.clear_obsolete:
+    operation_schedule = recursive_clear_obsolete(source_dataset,destination_dataset)
+
+    verbose_stderr("=================================")
+    for op,dset in operation_schedule:
+        dataset_path = dset.get_path()
+
+        if op == "destroy":
+            verbose_stderr("Destroying (%s) %s in destination" % (op,dataset_path))
+            if not opts.dryrun:
+                dst_conn.destroy_dataset(dataset_path)
+        elif op == "destroy_recursively":
+            verbose_stderr("Destroying recursively (%s) %s in destination" % (op,dataset_path))
+            if not opts.dryrun:
+                dst_conn.destroy_recursively(dataset_path)
+        else:
+            assert 0, 'not reached: unknown operation %r' % op
+        verbose_stderr("=================================")
+
+    verbose_stderr("Clearing of obsolete datasets complete.")
+
+    verbose_stderr("=================================")
+    verbose_stderr("Refreshing dataset data...")
+    source_dataset = src_conn.pools.lookup(source_dataset_name)
+    destination_dataset = dst_conn.pools.lookup(destination_dataset_name)
+
 operation_schedule = recursive_replicate(source_dataset,destination_dataset)
 optimized_operation_schedule = optimize(operation_schedule)
 
@@ -125,27 +151,3 @@ for op,src,dst,srcs,dsts in optimized_operation_schedule:
 
 verbose_stderr("Replication complete.")
 
-if opts.clear_obsolete:
-    verbose_stderr("Refreshing dataset data...")
-    source_dataset = src_conn.pools.lookup(source_dataset_name)
-    destination_dataset = dst_conn.pools.lookup(destination_dataset_name)
-
-    operation_schedule = recursive_clear_obsolete(source_dataset,destination_dataset)
-
-    verbose_stderr("=================================")
-    for op,dset in operation_schedule:
-        dataset_path = dset.get_path()
-
-        if op == "destroy":
-            verbose_stderr("Destroying (%s) %s in destination" % (op,dataset_path))
-            if not opts.dryrun:
-                dst_conn.destroy_dataset(dataset_path)
-        elif op == "destroy_recursively":
-            verbose_stderr("Destroying recursively (%s) %s in destination" % (op,dataset_path))
-            if not opts.dryrun:
-                dst_conn.destroy_recursively(dataset_path)
-        else:
-            assert 0, 'not reached: unknown operation %r' % op
-        verbose_stderr("=================================")
-
-    verbose_stderr("Clearing of obsolete datasets complete.")
