@@ -10,6 +10,25 @@ from Queue import Queue
 from threading import Thread
 
 
+# Work-around for check_output not existing on Python 2.6, as per
+# http://stackoverflow.com/questions/4814970/subprocess-check-output-doesnt-seem-to-exist-python-2-6-5
+# The implementation is lifted from
+# http://hg.python.org/cpython/file/d37f963394aa/Lib/subprocess.py#l544
+if "check_output" not in dir( subprocess ): # duck punch it in!
+    def f(*popenargs, **kwargs):
+        if 'stdout' in kwargs:
+            raise ValueError('stdout argument not allowed, it will be overridden.')
+        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+        output, unused_err = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            raise subprocess.CalledProcessError(retcode, cmd) # , output=output)
+        return output
+    subprocess.check_output = f
+
 class ZFSConnection:
     host = None
     _poolset = None
