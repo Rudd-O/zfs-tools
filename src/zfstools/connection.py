@@ -34,17 +34,19 @@ class ZFSConnection:
     _poolset = None
     _dirty = True
     _trust = False
-    def __init__(self,host="localhost", trust=False):
+    def __init__(self,host="localhost", trust=False, sshcipher=None):
         self.host = host
         self._trust = trust
         self._poolset= PoolSet()
         if host in ['localhost','127.0.0.1']:
             self.command = ["zfs"]
         else:
-            self.command = ["ssh","-o","BatchMode yes","-a","-x","-c","arcfour"]
+            self.command = ["ssh","-o","BatchMode yes","-a","-x"]
             if self._trust:
                 self.command.extend(["-o","CheckHostIP no"])
                 self.command.extend(["-o","StrictHostKeyChecking no"])
+            if sshcipher != None:
+                self.command.extend(["-c",sshcipher])
             self.command.extend([self.host,"zfs"])
 
     def _get_poolset(self):
