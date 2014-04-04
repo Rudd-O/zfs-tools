@@ -19,6 +19,7 @@ parser.add_option('-p', '--prefix', action='store', dest='prefix', default="auto
 parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='be verbose (default: %default)')
 parser.add_option('-t', '--timeformat', action='store', dest='timeformat', default="%Y-%m-%d-%H%M%S", help='postfix time format to append to snapshot names (default: %default, MUST be sortable using a general sort)')
 parser.add_option('-n', '--dry-run', action='store_true', dest='dryrun', default=False, help='don\'t actually manipulate any file systems')
+parser.add_option('--nosnapshot', action='store_true', dest='nosnapshot', default=False, help='don\'t create new snapshot, only delete according to keep value (default: %default)')
 opts,args = parser.parse_args(sys.argv[1:])
 
 try:
@@ -56,7 +57,7 @@ except KeyError:
 	verbose_stderr("No.\nError: the source dataset does not exist.  Snapshot cannot continue.")
 	sys.exit(2)
 
-if keep > 0:
+if keep > 0 and not opts.nosnapshot:
 	verbose_stderr("Snapshotting dataset %s:%s" % (source_host, source_dataset_name))
 
 	if not opts.dryrun:
