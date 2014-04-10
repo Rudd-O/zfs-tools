@@ -29,6 +29,24 @@ The utilities let you do this:
    
    Run `zreplicate --help` for a compendium of options you may use.
 
+5. zbackup
+   a command to snapshot and replicate filesystems according to their user properties.
+   The following user properties define the behaviour, where <tier> is
+   arbitrary, but expected to be e.g. hourly, daily, weekly, etc.
+   All properties must be in the module 'com.github.tesujimath.zbackup',
+   so prefix each property listed here with 'com.github.tesujimath.zbackup:',
+   following the best practice for user properties as described on the zfs man page.
+   - <tier>-snapshots - how many snapshots to keep in given tier
+   - replica          - dstdatasetname, as used by zreplicate
+   - replicate        - <tier>, which tier to replicate
+
+   Snapshotting for a given tier will be active as soon as <tier>-snapshots is defined with
+   an integer value.
+
+   Replication is done for a single tier only, as per the 'replicate' property.
+
+   Run `zbackup --help` for the usage, and complete options.
+
 The repository, bug tracker and Web site for this tool is at [http://github.com/Rudd-O/zfs-tools](http://github.com/Rudd-O/zfs-tools).  Comments to me through rudd-o@rudd-o.com.
 
 ##Setting up

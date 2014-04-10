@@ -1,0 +1,135 @@
+#!/usr/bin/env python
+#
+# zbackup - property driven ZFS backup utility, using zsnap/zreplicate.
+#
+# Author: Simon Guest, 11/4/2014
+# Licensed under GNU General Public License GPLv3
+
+import optparse
+import subprocess
+import sys
+
+# ZFS user property module prefix
+ZBACKUP_MODULE = 'com.github.tesujimath.zbackup'
+ZBACKUP_MODULE_SKIPLEN = len(ZBACKUP_MODULE) + 1
+
+# property names
+REPLICA_PROPERTY = 'replica'
+REPLICATE_PROPERTY = 'replicate'
+SNAPSHOTS_PROPERTY_SUFFIX = '-snapshots'
+
+def highlight(line):
+    """Highlight a line in the output."""
+    return("========== %s ==========" % line)
+
+def zprefixed(property):
+    """Return property with <ZBACKUP_MODULE> prefix."""
+    return '%s:%s' % (ZBACKUP_MODULE, property)
+
+def zunprefixed(prefixed_property):
+    """Return property with prefix stripped."""
+    return prefixed_property[ZBACKUP_MODULE_SKIPLEN:]
+
+def snapshots_property(tier):
+    """Return barename of snapshots property for given tier."""
+    return '%s%s' % (tier, SNAPSHOTS_PROPERTY_SUFFIX)
+
+def zbackup_properties(tier):
+    """Return list of relevant properties for given tier, unprefixed."""
+    return [REPLICA_PROPERTY, REPLICATE_PROPERTY, snapshots_property(tier)]
+
+def get_zpools():
+    """Return list of zpools."""
+    zpools = []
+    zpool_list = subprocess.Popen(["zpool", "list", "-H"], stdout = subprocess.PIPE)
+    for line in zpool_list.stdout:
+        zpools.append(line.split()[0])
+    return zpools
+
+def get_backup_properties(zpool, tier, options):
+    """Return the backup of all filesystems, by scanning the filesystems for relevant user properties.
+    Only locally set properties are used;  inherited properties are ignored."""
+    properties = {}
+    skipprefix = len(ZBACKUP_MODULE) + 1
+    property_ids = [zprefixed(property) for property in zbackup_properties(tier)]
+    zfs_get = subprocess.Popen(["zfs", "get", "-H", "-r", "-t", "filesystem", ",".join(property_ids), zpool], stdout = subprocess.PIPE)
+    for line in zfs_get.stdout:
+        (name, property, value, source) = line.rstrip('\n').split('\t')
+        if source == 'local':
+            if not properties.has_key(name):
+                properties[name] = {}
+            if value != "-":
+                bare_property = zunprefixed(property)
+                properties[name][bare_property] = value
+                if options.verbose:
+                    print("%s %s=%s" % (name, bare_property, value))
+    return properties
+
+def snapshot(tier, filesystem, keep, options):
+    """Snapshot given filesystem."""
+    zsnap_command = ['zsnap', '-k', str(keep), '-p', ('%s%s-' % (options.prefix, tier))]
+    if options.verbose:
+        zsnap_command += ['-v']
+    if options.timeformat != None:
+        zsnap_command += ['-t', options.timeformat]
+    if options.dryrun:
+        zsnap_command += ['-n']
+    zsnap_command += [filesystem]
+    if options.verbose:
+        print("%s" % highlight(' '.join(zsnap_command)))
+    subprocess.call(zsnap_command)
+
+def replicate(filesystem, destination, options):
+    """Replicate given filesystem, possibly after deleting snapshots from other tiers."""
+    # delete other tiers snapshots first?
+    if options.delete_tiers != None:
+        for tier in options.delete_tiers.split(','):
+            snapshot(tier, filesystem, 0, options)
+    # replicate
+    zreplicate_command = ['zreplicate']
+    if options.zreplicate_options != None:
+        zreplicate_command += options.zreplicate_options.split()
+    zreplicate_command += [filesystem, destination]
+    if options.verbose:
+        print("%s" % highlight(' '.join(zreplicate_command)))
+    subprocess.call(zreplicate_command)
+
+def maybe_backup(tier, filesystem, properties, options):
+    """Backup the given filesystem, as per the given properties and options."""
+    # snapshot?
+    if properties.has_key(snapshots_property(tier)):
+        try:
+            keep = int(properties[snapshots_property(tier)])
+            snapshot(tier, filesystem, keep, options)
+        except ValueError:
+            sys.stderr.write("badly formed %s=%s property for %s (should be integer)\n" % (snapshots_property(tier), properties[snapshots_property(tier)], filesystem))
+        
+    # replicate?
+    if properties.has_key(REPLICATE_PROPERTY) and properties[REPLICATE_PROPERTY] == tier and properties.has_key(REPLICA_PROPERTY):
+        replicate(filesystem, properties[REPLICA_PROPERTY], options)
+
+
+def main():
+    usage = "usage: %prog [options] <tier>"
+    parser = optparse.OptionParser(usage)
+    parser.add_option('-d', '--delete-tiers', action='store', dest='delete_tiers', default=None, help='comma-separated snapshot tiers to delete (default: %default)')
+    parser.add_option('-p', '--prefix', action='store', dest='prefix', default="auto-", help='prefix to prepend to tier in snapshot names (default: %default)')
+    parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='be verbose (default: %default)')
+    parser.add_option('-t', '--timeformat', action='store', dest='timeformat', default=None, help='postfix time format to append to snapshot names (default: as per zsnap)')
+    parser.add_option('-n', '--dry-run', action='store_true', dest='dryrun', default=False, help='don\'t actually manipulate any file systems')
+    parser.add_option('--zreplicate-options', action='store', dest='zreplicate_options', default=None, type="string", help='options passed to zreplicate (default: %default)')
+    (options, args) = parser.parse_args(sys.argv)
+
+    if len(args) < 2:
+        sys.stderr.write("%s\n" % usage)
+        exit(1)
+    tier = args[1]
+
+    for zpool in get_zpools():
+        backup_properties = get_backup_properties(zpool, tier, options)
+
+    for filesystem in backup_properties.keys():
+        maybe_backup(tier, filesystem, backup_properties[filesystem], options)
+
+if __name__ == "__main__":
+    main()
