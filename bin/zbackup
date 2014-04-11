@@ -86,7 +86,7 @@ def replicate(filesystem, destination, options):
         for tier in options.delete_tiers.split(','):
             snapshot(tier, filesystem, 0, options)
     # replicate
-    zreplicate_command = ['zreplicate']
+    zreplicate_command = ['zreplicate', '--create-destination']
     if options.zreplicate_options != None:
         zreplicate_command += options.zreplicate_options.split()
     zreplicate_command += [filesystem, destination]
