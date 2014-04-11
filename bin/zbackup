@@ -87,6 +87,10 @@ def replicate(filesystem, destination, options):
             snapshot(tier, filesystem, 0, options)
     # replicate
     zreplicate_command = ['zreplicate', '--create-destination']
+    if options.verbose:
+        zreplicate_command += ['-v']
+    if options.dryrun:
+        zreplicate_command += ['-n']
     if options.zreplicate_options != None:
         zreplicate_command += options.zreplicate_options.split()
     zreplicate_command += [filesystem, destination]
