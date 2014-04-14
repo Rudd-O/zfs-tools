@@ -110,7 +110,8 @@ def maybe_backup(tier, filesystem, properties, options):
         
     # replicate?
     if properties.has_key(REPLICATE_PROPERTY) and properties[REPLICATE_PROPERTY] == tier and properties.has_key(REPLICA_PROPERTY):
-        replicate(filesystem, properties[REPLICA_PROPERTY], options)
+        for replica in properties[REPLICA_PROPERTY].split(','):
+            replicate(filesystem, replica, options)
 
 
 def main():
