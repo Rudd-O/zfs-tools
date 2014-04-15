@@ -17,6 +17,7 @@ ZBACKUP_MODULE_SKIPLEN = len(ZBACKUP_MODULE) + 1
 REPLICA_PROPERTY = 'replica'
 REPLICATE_PROPERTY = 'replicate'
 SNAPSHOTS_PROPERTY_SUFFIX = '-snapshots'
+SNAPSHOT_LIMIT_PROPERTY_SUFFIX = '-snapshot-limit'
 
 def highlight(line):
     """Highlight a line in the output."""
@@ -34,9 +35,13 @@ def snapshots_property(tier):
     """Return barename of snapshots property for given tier."""
     return '%s%s' % (tier, SNAPSHOTS_PROPERTY_SUFFIX)
 
+def snapshot_limit_property(tier):
+    """Return barename of snapshot-limit property for given tier."""
+    return '%s%s' % (tier, SNAPSHOT_LIMIT_PROPERTY_SUFFIX)
+
 def zbackup_properties(tier):
     """Return list of relevant properties for given tier, unprefixed."""
-    return [REPLICA_PROPERTY, REPLICATE_PROPERTY, snapshots_property(tier)]
+    return [REPLICA_PROPERTY, REPLICATE_PROPERTY, snapshots_property(tier), snapshot_limit_property(tier)]
 
 def get_zpools():
     """Return list of zpools."""
@@ -65,9 +70,11 @@ def get_backup_properties(zpool, tier, options):
                     print("%s %s=%s" % (name, bare_property, value))
     return properties
 
-def snapshot(tier, filesystem, keep, options):
+def snapshot(tier, filesystem, take_snapshot, keep, options):
     """Snapshot given filesystem."""
     zsnap_command = ['zsnap', '-k', str(keep), '-p', ('%s%s-' % (options.prefix, tier))]
+    if not take_snapshot:
+        zsnap_command += ['--nosnapshot']
     if options.verbose:
         zsnap_command += ['-v']
     if options.timeformat != None:
@@ -84,7 +91,7 @@ def replicate(filesystem, destination, options):
     # delete other tiers snapshots first?
     if options.delete_tiers != None:
         for tier in options.delete_tiers.split(','):
-            snapshot(tier, filesystem, 0, options)
+            snapshot(tier, filesystem, False, 0, options)
     # replicate
     zreplicate_command = ['zreplicate', '--create-destination', '--no-replication-stream']
     if options.verbose:
@@ -98,18 +105,41 @@ def replicate(filesystem, destination, options):
         print("%s" % highlight(' '.join(zreplicate_command)))
     subprocess.call(zreplicate_command)
 
-def maybe_backup(tier, filesystem, properties, options):
-    """Backup the given filesystem, as per the given properties and options."""
-    # snapshot?
-    if properties.has_key(snapshots_property(tier)):
+def property_has_value(properties, property_name):
+    """Return whether the property has a (not none) value."""
+    return properties.has_key(property_name) and properties[property_name] != "none"
+
+def property_int_value_or_none(filesystem, properties, property_name):
+    """Interpret the property value as an integer value, or None."""
+    value = None
+    if property_has_value(properties, property_name):
+        p = properties[property_name]
         try:
-            keep = int(properties[snapshots_property(tier)])
-            snapshot(tier, filesystem, keep, options)
+            value = int(p)
         except ValueError:
-            sys.stderr.write("badly formed %s=%s property for %s (should be integer)\n" % (snapshots_property(tier), properties[snapshots_property(tier)], filesystem))
+            sys.stderr.write("badly formed %s=%s property for %s (should be integer)\n" % (property_name, properties[property_name], filesystem))
+    return value
+
+def backup_or_reap_snapshots(tier, filesystem, properties, options):
+    """Backup and/or reap snapshots for the given filesystem, as per the given properties and options."""
+    # snapshot?
+    take_snapshot = False
+    snapshot_limit = None
+    # snapshots property
+    snapshot_limit = property_int_value_or_none(filesystem, properties, snapshots_property(tier))
+    if snapshot_limit != None:
+        take_snapshot = True
+    # snapshot-limit property
+    n = property_int_value_or_none(filesystem, properties, snapshot_limit_property(tier))
+    if snapshot_limit != None and n != None:
+        snapshot_limit = min(n, snapshot_limit)
+    else:
+        snapshot_limit = n
+    if snapshot_limit != None:
+        snapshot(tier, filesystem, take_snapshot, snapshot_limit, options)
         
     # replicate?
-    if properties.has_key(REPLICATE_PROPERTY) and properties[REPLICATE_PROPERTY] == tier and properties.has_key(REPLICA_PROPERTY):
+    if property_has_value(properties, REPLICATE_PROPERTY) and properties[REPLICATE_PROPERTY] == tier and property_has_value(properties, REPLICA_PROPERTY):
         for replica in properties[REPLICA_PROPERTY].split(','):
             replicate(filesystem, replica, options)
 
@@ -134,7 +164,7 @@ def main():
         backup_properties = get_backup_properties(zpool, tier, options)
 
     for filesystem in backup_properties.keys():
-        maybe_backup(tier, filesystem, backup_properties[filesystem], options)
+        backup_or_reap_snapshots(tier, filesystem, backup_properties[filesystem], options)
 
 if __name__ == "__main__":
     main()
