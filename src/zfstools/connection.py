@@ -30,8 +30,8 @@ class ZFSConnection:
 
     def _get_poolset(self):
         if self._dirty:
-            stdout = subprocess.check_output(self.command + ["list", "-r", "-t", "all", "-H", "-o", "name"])
-            stdout2 = subprocess.check_output(self.command + ["get", "-r", "-o", "name,value", "creation", "-Hp"])
+            stdout = subprocess.check_output(self.command + ["list", "-Hr", "-t", "all", "-o", "name"])
+            stdout2 = subprocess.check_output(self.command + ["get", "-Hpr", "-o", "name,value", "creation"])
             self._poolset.parse_zfs_r_output(stdout,stdout2)
             self._dirty = False
         return self._poolset
