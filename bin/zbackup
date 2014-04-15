@@ -131,8 +131,9 @@ def backup_or_reap_snapshots(tier, filesystem, properties, options):
         take_snapshot = True
     # snapshot-limit property
     n = property_int_value_or_none(filesystem, properties, snapshot_limit_property(tier))
-    if snapshot_limit != None and n != None:
-        snapshot_limit = min(n, snapshot_limit)
+    if snapshot_limit != None:
+        if n != None:
+            snapshot_limit = min(n, snapshot_limit)
     else:
         snapshot_limit = n
     if snapshot_limit != None:
