@@ -24,7 +24,6 @@ parser.add_option('-t', '--trust', action='store_true', dest='trust', default=Fa
 parser.add_option('-c', '--clear-obsolete', action='store_true', dest='clear_obsolete', default=False, help='automatically destroy file systems and snapshots at the destination that are no longer present in the source (default: %default)')
 parser.add_option('--ssh-cipher', action='store', dest='sshcipher', default=None, type="string", help='ssh cipher, careful selection of which may increase performance (default: as per ssh_config)')
 parser.add_option('--create-destination', action='store_true', dest='create_destination', default=False, help='create destination dataset if missing (default: %default)')
-parser.add_option('--no-replication-stream', action='store_true', dest='no_replication_stream', default=False, help='zfs send without -R (default: %default)')
 opts,args = parser.parse_args(sys.argv[1:])
 
 try:
@@ -141,10 +140,7 @@ for op,src,dst,srcs,dsts in optimized_operation_schedule:
                 this_send_opts = ["-I", "@" + srcs.name]
             else:
                 this_send_opts = []
-            # The original Rudd-O version of this script passed -R to zfs send in case of "recursive".
-            # That looks like a mistake to me (Simon Guest), but I am waiting to hear from the author.
-            # For now, we inhibit this with a command line option (but it might be best removed).
-            if "recursive" in op and not opts.no_replication_stream:
+            if "recursive" in op:
                 this_send_opts.append("-R")
             verbose_stderr("Replicating (%s) %s to %s" % (op,source_dataset_path,destination_dataset_path))
             verbose_stderr("Base snapshot available in destination: %s" % srcs)
