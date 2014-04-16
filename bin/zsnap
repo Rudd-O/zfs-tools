@@ -67,7 +67,7 @@ if keep > 0 and not opts.nosnapshot:
 
 ssn = sorted([ (x.get_creation(), x.name, x) for x in source_dataset.get_snapshots(flt) ])
 
-if opts.dryrun and keep > 0:
+if opts.dryrun and keep > 0 and not opts.nosnapshot:
 	# simulate the addition of a new dataset
 	keep = keep - 1
 
