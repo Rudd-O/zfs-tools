@@ -36,18 +36,20 @@ The utilities let you do this:
    All properties must be in the module 'com.github.tesujimath.zbackup',
    so prefix each property listed here with 'com.github.tesujimath.zbackup:',
    following the best practice for user properties as described on the zfs man page.
-   - *tier*-snapshots      - turns on snapshots, and limits how many snapshots to keep in given tier
-   - *tier*-snapshot-limit - limits how many snapshots to keep in given tier
+   - *tier*-snapshots      - limits how many snapshots to keep in given tier
    - replica               - comma-separated list of dstdatasetname, as used by zreplicate
    - replicate             - *tier*, which tier to replicate
 
-   Snapshotting for a given tier will be active as soon as *tier*-snapshots is defined with
-   an integer value.
+   Snapshotting for a given tier will be active as soon as *tier*-snapshots is defined
+   with an integer value, with a property source of local.  Received properties will not
+   cause new snapshots to be taken.
 
-   To reap old snapshots on a destination replica, set *tier*-snapshot-limit, without setting
-   *tier*-snapshots.  If both are defined, the keep value will be the minimum.
+   However, old snapshots will be reaped if the property source is local or received.
+   This means that reaping old snapshots on a destination replica is driven by the
+   received property *tier*-snapshots.
 
-   Replication is done for a single tier only, as per the 'replicate' property.
+   Replication is done for a single tier only, as per the 'replicate' property.  Again,
+   these properties must have the source being local to have any effect.
 
    Run `zbackup --help` for the usage, and complete options.
 
