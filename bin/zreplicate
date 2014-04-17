@@ -140,8 +140,9 @@ for op,src,dst,srcs,dsts in optimized_operation_schedule:
                 this_send_opts = ["-I", "@" + srcs.name]
             else:
                 this_send_opts = []
-            if "recursive" in op:
-                this_send_opts.append("-R")
+            # sjg: never use the unsafe (for backup) zfs send -R / zfs receive -F.
+            #if "recursive" in op:
+            #    this_send_opts.append("-R")
             verbose_stderr("Replicating (%s) %s to %s" % (op,source_dataset_path,destination_dataset_path))
             verbose_stderr("Base snapshot available in destination: %s" % srcs)
             verbose_stderr("Target snapshot available in source:    %s" % dsts)

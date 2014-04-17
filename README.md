@@ -24,8 +24,8 @@ The utilities let you do this:
    - zsnap on the local machine
    - zreplicate from the local machine to the destination machine
 
-   Obsolete snapshots deleted by zsnap will be automatically purged on
-   the destination machine by zreplicate.
+   Obsolete snapshots deleted by zsnap will *not* be automatically purged on
+   the destination machine by zreplicate.  To purge these, use --clear-obsolete.
    
    Run `zreplicate --help` for a compendium of options you may use.
 
