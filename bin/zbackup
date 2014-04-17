@@ -17,6 +17,7 @@ ZBACKUP_MODULE_SKIPLEN = len(ZBACKUP_MODULE) + 1
 REPLICA_PROPERTY = 'replica'
 REPLICATE_PROPERTY = 'replicate'
 SNAPSHOTS_PROPERTY_SUFFIX = '-snapshots'
+SNAPSHOT_LIMIT_PROPERTY_SUFFIX = '-snapshot-limit'
 
 def highlight(line):
     """Highlight a line in the output."""
@@ -34,9 +35,13 @@ def snapshots_property(tier):
     """Return barename of snapshots property for given tier."""
     return '%s%s' % (tier, SNAPSHOTS_PROPERTY_SUFFIX)
 
+def snapshot_limit_property(tier):
+    """Return barename of snapshot-limit property for given tier."""
+    return '%s%s' % (tier, SNAPSHOT_LIMIT_PROPERTY_SUFFIX)
+
 def zbackup_properties(tier):
     """Return list of relevant properties for given tier, unprefixed."""
-    return [REPLICA_PROPERTY, REPLICATE_PROPERTY, snapshots_property(tier)]
+    return [REPLICA_PROPERTY, REPLICATE_PROPERTY, snapshots_property(tier), snapshot_limit_property(tier)]
 
 def get_zpools():
     """Return list of zpools."""
@@ -55,11 +60,13 @@ def get_backup_properties(zpool, tier, options):
     zfs_get = subprocess.Popen(["zfs", "get", "-H", "-r", "-t", "filesystem", ",".join(property_ids), zpool], stdout = subprocess.PIPE)
     for line in zfs_get.stdout:
         (name, property, value, source) = line.rstrip('\n').split('\t')
-        if source == 'local' or source == 'received':
+        bare_property = zunprefixed(property)
+        if source.startswith('inherited'):
+            source = 'inherited'
+        if source == 'local' or source == 'received' or (source == 'inherited' and bare_property == snapshot_limit_property(tier)):
             if not properties.has_key(name):
                 properties[name] = {}
             if value != "-":
-                bare_property = zunprefixed(property)
                 properties[name][bare_property] = (value, source)
                 if options.verbose:
                     print("%s %s=%s %s" % (name, bare_property, value, source))
@@ -128,6 +135,10 @@ def backup_or_reap_snapshots(tier, filesystem, properties, options):
     (snapshots, snapshots_source) = property_int_value_or_none(filesystem, properties, snapshots_property(tier))
     if snapshots != None and snapshots_source == 'local':
         take_snapshot = True
+    # snapshot-limit property, overrides value of snapshots if both present
+    (snapshot_limit, snapshot_limit_source) = property_int_value_or_none(filesystem, properties, snapshot_limit_property(tier))
+    if snapshot_limit != None:
+        snapshots = snapshot_limit
     if snapshots != None:
         snapshot(tier, filesystem, take_snapshot, snapshots, options)
         
