@@ -24,6 +24,8 @@ parser.add_option('-t', '--trust', action='store_true', dest='trust', default=Fa
 parser.add_option('-c', '--clear-obsolete', action='store_true', dest='clear_obsolete', default=False, help='automatically destroy file systems and snapshots at the destination that are no longer present in the source (default: %default)')
 parser.add_option('--ssh-cipher', action='store', dest='sshcipher', default=None, type="string", help='ssh cipher, careful selection of which may increase performance (default: as per ssh_config)')
 parser.add_option('--create-destination', action='store_true', dest='create_destination', default=False, help='create destination dataset if missing (default: %default)')
+parser.add_option('--replication-stream', action='store_true', dest='replication_stream', default=True, help='use zfs send -R, which may destroy destination filesystems/snapshots (default: %default)')
+parser.add_option('--no-replication-stream', action='store_false', dest='replication_stream', help='don\'t use zfs send -R, to protect destination filesystems/snapshots')
 opts,args = parser.parse_args(sys.argv[1:])
 
 try:
@@ -110,7 +112,7 @@ if opts.clear_obsolete:
     destination_dataset = dst_conn.pools.lookup(destination_dataset_name)
 
 operation_schedule = recursive_replicate(source_dataset,destination_dataset)
-optimized_operation_schedule = optimize(operation_schedule)
+optimized_operation_schedule = optimize(operation_schedule, allow_recursivize = opts.replication_stream)
 
 send_opts = []
 receive_opts = []
@@ -140,9 +142,8 @@ for op,src,dst,srcs,dsts in optimized_operation_schedule:
                 this_send_opts = ["-I", "@" + srcs.name]
             else:
                 this_send_opts = []
-            # sjg: never use the unsafe (for backup) zfs send -R / zfs receive -F.
-            #if "recursive" in op:
-            #    this_send_opts.append("-R")
+            if "recursive" in op and opts.replication_stream:
+                this_send_opts.append("-R")
             verbose_stderr("Replicating (%s) %s to %s" % (op,source_dataset_path,destination_dataset_path))
             verbose_stderr("Base snapshot available in destination: %s" % srcs)
             verbose_stderr("Target snapshot available in source:    %s" % dsts)

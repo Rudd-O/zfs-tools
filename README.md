@@ -24,8 +24,10 @@ The utilities let you do this:
    - zsnap on the local machine
    - zreplicate from the local machine to the destination machine
 
-   Obsolete snapshots deleted by zsnap will *not* be automatically purged on
-   the destination machine by zreplicate.  To purge these, use --clear-obsolete.
+   Obsolete snapshots deleted by zsnap will be automatically purged on
+   the destination machine by zreplicate, as a side effect of using
+   replication streams.  To inhibit this, use the
+   --no-replication-stream option.
    
    Run `zreplicate --help` for a compendium of options you may use.
 
@@ -45,14 +47,19 @@ The utilities let you do this:
    with an integer value, with a property source of local.  Received properties will not
    cause new snapshots to be taken.
 
-   However, old snapshots will be reaped if the property source is local or received.
-   This means that reaping old snapshots on a destination replica is driven by the
-   received property *tier*-snapshots, or the property *tier*-snapshot-limit, with
-   the latter overriding the former if both are present.  Note that the limit property
-   functions even if its source is inherited.
+   However, old snapshots will be reaped if the property source is local or
+   received.  This means that reaping old snapshots on a destination replica is
+   driven by the received property *tier*-snapshots, or the property
+   *tier*-snapshot-limit, with the latter overriding the former if both are
+   present.  Note that the limit property functions even if its source is
+   inherited.
 
-   Replication is done for a single tier only, as per the 'replicate' property.  Again,
-   these properties must have the source being local to have any effect.
+   Replication is done for a single tier only, as per the 'replicate' property.
+   Again, these properties must have the source being local to have any effect.
+   Note that the --no-replication-stream option for zreplicate is used, so that
+   no destination replica snapshots and filesystems are deleted as a side-effect
+   of running a backup.  To purge obsolete snapshots from the destination, it is
+   recommended to use the behaviour described in the previous paragraph.
 
    Run `zbackup --help` for the usage, and complete options.
 

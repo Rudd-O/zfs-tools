@@ -193,12 +193,10 @@ def optimize_recursivize(operation_schedule):
 
     return new_operation_schedule
 
-def optimize(operation_schedule):
+def optimize(operation_schedule, allow_recursivize = True):
     operation_schedule = optimize_coalesce(operation_schedule)
-    # sjg: don't optimize_recursivize, as we don't want to have to use
-    # the unsafe (for backup) zfs send -R / zfs receive -F.
-    # TBD delete the optimize_recursivize function itself.
-    #operation_schedule = optimize_recursivize(operation_schedule)
+    if allow_recursivize:
+        operation_schedule = optimize_recursivize(operation_schedule)
     return operation_schedule
 
 # we walk the entire dataset structure, and sync snapshots recursively
