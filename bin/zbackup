@@ -9,6 +9,8 @@ import optparse
 import subprocess
 import sys
 
+from zfstools.util import stderr, verbose_stderr, set_verbose
+
 # ZFS user property module prefix
 ZBACKUP_MODULE = 'com.github.tesujimath.zbackup'
 ZBACKUP_MODULE_SKIPLEN = len(ZBACKUP_MODULE) + 1
@@ -68,8 +70,7 @@ def get_backup_properties(zpool, tier, options):
                 properties[name] = {}
             if value != "-":
                 properties[name][bare_property] = (value, source)
-                if options.verbose:
-                    print("%s %s=%s %s" % (name, bare_property, value, source))
+                verbose_stderr("%s %s=%s %s" % (name, bare_property, value, source))
     return properties
 
 def snapshot(tier, filesystem, take_snapshot, keep, options):
@@ -84,8 +85,7 @@ def snapshot(tier, filesystem, take_snapshot, keep, options):
     if options.dryrun:
         zsnap_command += ['-n']
     zsnap_command += [filesystem]
-    if options.verbose:
-        print("%s" % highlight(' '.join(zsnap_command)))
+    verbose_stderr("%s" % highlight(' '.join(zsnap_command)))
     subprocess.call(zsnap_command)
 
 def replicate(filesystem, destination, options):
@@ -103,8 +103,7 @@ def replicate(filesystem, destination, options):
     if options.zreplicate_options != None:
         zreplicate_command += options.zreplicate_options.split()
     zreplicate_command += [filesystem, destination]
-    if options.verbose:
-        print("%s" % highlight(' '.join(zreplicate_command)))
+    verbose_stderr("%s" % highlight(' '.join(zreplicate_command)))
     subprocess.call(zreplicate_command)
 
 def property_has_value(properties, property_name):
@@ -123,7 +122,7 @@ def property_int_value_or_none(filesystem, properties, property_name):
         try:
             value = int(value_s)
         except ValueError:
-            sys.stderr.write("badly formed %s=%s property for %s (should be integer)\n" % (property_name, properties[property_name], filesystem))
+            stderr("badly formed %s=%s property for %s (should be integer)" % (property_name, properties[property_name], filesystem))
     return (value, source)
 
 def backup_or_reap_snapshots(tier, filesystem, properties, options):
@@ -160,9 +159,11 @@ def main():
     parser.add_option('--zreplicate-options', action='store', dest='zreplicate_options', default=None, type="string", help='options passed to zreplicate (default: %default)')
     (options, args) = parser.parse_args(sys.argv)
 
+    set_verbose(options.verbose)
+
     if len(args) < 2:
-        sys.stderr.write("%s\n" % usage)
-        exit(1)
+        stderr("%s" % usage)
+        sys.exit(1)
     tier = args[1]
 
     for zpool in get_zpools():
