@@ -65,7 +65,7 @@ def get_backup_properties(zpool, tier, options):
         bare_property = zunprefixed(property)
         if source.startswith('inherited'):
             source = 'inherited'
-        if source == 'local' or source == 'received' or (source == 'inherited' and bare_property == snapshot_limit_property(tier)):
+        if source == 'local' or source == 'received': # not this for now: or (source == 'inherited' and bare_property == snapshot_limit_property(tier)):
             if not properties.has_key(name):
                 properties[name] = {}
             if value != "-":
