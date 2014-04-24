@@ -1,3 +1,6 @@
+nothing:
+	true
+
 install:
         python setup.py bdist_dumb
         tar -C $(DESTDIR) zxvmf dist/zfs-tools-*.linux-*.tar.gz
