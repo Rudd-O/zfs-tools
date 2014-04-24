@@ -8,5 +8,5 @@ Homepage: https://github.com/Rudd-O/zfs-tools
 
 Package: zfs-tools
 Architecture: all
-Depends: ${misc:Depends}, ubuntu-zfs
+Depends: ${misc:Depends}, zfs-fuse | debian-zfs | ubuntu-zfs
 Description: A collection of tools for ZFS
