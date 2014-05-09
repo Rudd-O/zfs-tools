@@ -168,9 +168,8 @@ def main():
 
     for zpool in get_zpools():
         backup_properties = get_backup_properties(zpool, tier, options)
-
-    for filesystem in backup_properties.keys():
-        backup_or_reap_snapshots(tier, filesystem, backup_properties[filesystem], options)
+        for filesystem in backup_properties.keys():
+            backup_or_reap_snapshots(tier, filesystem, backup_properties[filesystem], options)
 
 if __name__ == "__main__":
     main()
