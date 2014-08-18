@@ -2,6 +2,7 @@
 Tree models for the ZFS tools
 '''
 
+from collections import OrderedDict
 
 class Dataset:
     name = None
@@ -138,17 +139,15 @@ class PoolSet:  # maybe rewrite this as a dataset or something?
 
         return dset
 
-    def parse_zfs_r_output(self, output, creationtimes):
+    def parse_zfs_r_output(self, creationtimes):
 
         # make into array
-        lines = [ s.strip() for s in output.splitlines() ]
-
-        creations = dict([ s.strip().split("\t") for s in creationtimes.splitlines() if s.strip() ])
+        creations = OrderedDict([ s.strip().split("\t") for s in creationtimes.splitlines() if s.strip() ])
 
         # names of pools
         old_dsets = [ x.get_path() for x in self.walk() ]
         old_dsets.reverse()
-        new_dsets = [ s.split("\t")[0] for s in lines ]
+        new_dsets = creations.keys()
 
         for dset in new_dsets:
             if "@" in dset:
