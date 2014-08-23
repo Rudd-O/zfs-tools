@@ -10,22 +10,43 @@ from Queue import Queue
 from threading import Thread
 
 
+# Work-around for check_output not existing on Python 2.6, as per
+# http://stackoverflow.com/questions/4814970/subprocess-check-output-doesnt-seem-to-exist-python-2-6-5
+# The implementation is lifted from
+# http://hg.python.org/cpython/file/d37f963394aa/Lib/subprocess.py#l544
+if "check_output" not in dir( subprocess ): # duck punch it in!
+    def f(*popenargs, **kwargs):
+        if 'stdout' in kwargs:
+            raise ValueError('stdout argument not allowed, it will be overridden.')
+        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+        output, unused_err = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            raise subprocess.CalledProcessError(retcode, cmd) # , output=output)
+        return output
+    subprocess.check_output = f
+
 class ZFSConnection:
     host = None
     _poolset = None
     _dirty = True
     _trust = False
-    def __init__(self,host="localhost", trust=False):
+    def __init__(self,host="localhost", trust=False, sshcipher=None):
         self.host = host
         self._trust = trust
         self._poolset= PoolSet()
         if host in ['localhost','127.0.0.1']:
             self.command = ["zfs"]
         else:
-            self.command = ["ssh","-o","BatchMode yes","-a","-x","-c","arcfour"]
+            self.command = ["ssh","-o","BatchMode yes","-a","-x"]
             if self._trust:
                 self.command.extend(["-o","CheckHostIP no"])
                 self.command.extend(["-o","StrictHostKeyChecking no"])
+            if sshcipher != None:
+                self.command.extend(["-c",sshcipher])
             self.command.extend([self.host,"zfs"])
 
     def _get_poolset(self):

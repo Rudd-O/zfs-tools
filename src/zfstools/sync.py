@@ -193,9 +193,10 @@ def optimize_recursivize(operation_schedule):
 
     return new_operation_schedule
 
-def optimize(operation_schedule):
+def optimize(operation_schedule, allow_recursivize = True):
     operation_schedule = optimize_coalesce(operation_schedule)
-    operation_schedule = optimize_recursivize(operation_schedule)
+    if allow_recursivize:
+        operation_schedule = optimize_recursivize(operation_schedule)
     return operation_schedule
 
 # we walk the entire dataset structure, and sync snapshots recursively

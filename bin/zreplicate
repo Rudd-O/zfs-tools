@@ -22,6 +22,10 @@ parser.add_option('-C', '--force-compression', action='store_true', dest='force_
 parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='be verbose (default: %default)')
 parser.add_option('-t', '--trust', action='store_true', dest='trust', default=False, help='automatically trust unknown or mismatched SSH keys of remote hosts (default: %default)')
 parser.add_option('-c', '--clear-obsolete', action='store_true', dest='clear_obsolete', default=False, help='automatically destroy file systems and snapshots at the destination that are no longer present in the source (default: %default)')
+parser.add_option('--ssh-cipher', action='store', dest='sshcipher', default=None, type="string", help='ssh cipher, careful selection of which may increase performance (default: as per ssh_config)')
+parser.add_option('--create-destination', action='store_true', dest='create_destination', default=False, help='create destination dataset if missing (default: %default)')
+parser.add_option('--replication-stream', action='store_true', dest='replication_stream', default=True, help='use zfs send -R, which may destroy destination filesystems/snapshots (default: %default)')
+parser.add_option('--no-replication-stream', action='store_false', dest='replication_stream', help='don\'t use zfs send -R, to protect destination filesystems/snapshots')
 opts,args = parser.parse_args(sys.argv[1:])
 
 try:
@@ -50,8 +54,8 @@ set_verbose(opts.verbose)
 
 # ================ start program algorithm ===================
 
-src_conn = ZFSConnection(source_host, trust=opts.trust)
-dst_conn = ZFSConnection(destination_host, trust=opts.trust)
+src_conn = ZFSConnection(source_host, trust=opts.trust, sshcipher=opts.sshcipher)
+dst_conn = ZFSConnection(destination_host, trust=opts.trust, sshcipher=opts.sshcipher)
 
 verbose_stderr("Replicating dataset %s:%s into %s:%s..." % (
 		source_host,source_dataset_name,
@@ -69,8 +73,17 @@ verbose_stderr("Assessing that the destination dataset exists...")
 try:
 	destination_dataset = dst_conn.pools.lookup(destination_dataset_name)
 except KeyError:
-	stderr("Error: the destination dataset does not exist.  Backup cannot continue.")
-	sys.exit(2)
+	if opts.create_destination:
+		verbose_stderr("Creating missing destination dataset exists as requested")
+		dst_conn.create_dataset(destination_dataset_name)
+		try:
+			destination_dataset = dst_conn.pools.lookup(destination_dataset_name)
+		except KeyError:
+			stderr("Error: failed to create the destination dataset.  Backup cannot continue.")
+			sys.exit(2)
+	else:
+		stderr("Error: the destination dataset does not exist.  Backup cannot continue.")
+		sys.exit(2)
 
 if opts.clear_obsolete:
     operation_schedule = recursive_clear_obsolete(source_dataset,destination_dataset)
@@ -99,7 +112,7 @@ if opts.clear_obsolete:
     destination_dataset = dst_conn.pools.lookup(destination_dataset_name)
 
 operation_schedule = recursive_replicate(source_dataset,destination_dataset)
-optimized_operation_schedule = optimize(operation_schedule)
+optimized_operation_schedule = optimize(operation_schedule, allow_recursivize = opts.replication_stream)
 
 send_opts = []
 receive_opts = []
@@ -129,7 +142,7 @@ for op,src,dst,srcs,dsts in optimized_operation_schedule:
                 this_send_opts = ["-I", "@" + srcs.name]
             else:
                 this_send_opts = []
-            if "recursive" in op:
+            if "recursive" in op and opts.replication_stream:
                 this_send_opts.append("-R")
             verbose_stderr("Replicating (%s) %s to %s" % (op,source_dataset_path,destination_dataset_path))
             verbose_stderr("Base snapshot available in destination: %s" % srcs)
