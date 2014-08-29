@@ -65,6 +65,9 @@ The utilities let you do this:
 
    Run `zbackup --list` to see what backup properties are set.
 
+   Setting and unsetting of the properties used by zbackup is most easily done
+   using zbackup --set, and zbackup --unset.
+
 The repository, bug tracker and Web site for this tool is at [http://github.com/Rudd-O/zfs-tools](http://github.com/Rudd-O/zfs-tools).  Comments to me through rudd-o@rudd-o.com.
 
 ##Setting up

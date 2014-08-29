@@ -189,6 +189,23 @@ def list_backup_properties(options):
         for filesystem in sorted(backup_properties.keys()):
             print("%s %s" % (filesystem, format_backup_properties(backup_properties[filesystem])))
  
+def set_backup_properties(filesystem, property_values):
+    for property_value in property_values:
+        toks = property_value.split('=')
+        if len(toks) == 2:
+            property, value = toks
+            zfs_command = ['zfs', 'set', '%s=%s' % (zprefixed(property), value), filesystem]
+            sys.stdout.write("%s\n" % ' '.join(zfs_command))
+            subprocess.call(zfs_command)
+        else:
+            sys.stderr.write("zbackup: ignoring badly formatted property=value: %s\n" % property_value)
+
+def unset_backup_properties(filesystem, properties):
+    for property in properties:
+        zfs_command = ['zfs', 'inherit', zprefixed(property), filesystem]
+        sys.stdout.write("%s\n" % ' '.join(zfs_command))
+        subprocess.call(zfs_command)
+
 def backup_by_properties(tier, options):
     for zpool in get_zpools():
         backup_properties = get_backup_properties(zpool, options, tier)
@@ -196,7 +213,7 @@ def backup_by_properties(tier, options):
             backup_or_reap_snapshots(tier, filesystem, backup_properties[filesystem], options)
 
 def main():
-    usage = "usage: %prog [options] <tier>"
+    usage = "usage: %prog [options] [<tier>] [<property=value>] [<property>]"
     parser = optparse.OptionParser(usage)
     parser.add_option('-d', '--delete-tiers', action='store', dest='delete_tiers', default=None, help='comma-separated snapshot tiers to delete (default: %default)')
     parser.add_option('-p', '--prefix', action='store', dest='prefix', default="auto-", help='prefix to prepend to tier in snapshot names (default: %default)')
@@ -204,6 +221,8 @@ def main():
     parser.add_option('-t', '--timeformat', action='store', dest='timeformat', default=None, help='postfix time format to append to snapshot names (default: as per zsnap)')
     parser.add_option('-n', '--dry-run', action='store_true', dest='dryrun', default=False, help='don\'t actually manipulate any file systems')
     parser.add_option('-l', '--list', action='store_true', dest='list', default=False, help='list backup properties, do nothing else')
+    parser.add_option('-s', '--set', action='store_true', dest='set', default=False, help='set backup properties, do nothing else')
+    parser.add_option('-u', '--unset', action='store_true', dest='unset', default=False, help='unset backup properties, do nothing else')
     parser.add_option('--zreplicate-options', action='store', dest='zreplicate_options', default=None, type="string", help='options passed to zreplicate (default: %default)')
     (options, args) = parser.parse_args(sys.argv)
 
@@ -212,11 +231,25 @@ def main():
     if options.list:
         # just list the backup properties
         list_backup_properties(options)
+    elif options.set:
+        # just set the backup properties
+        if len(args) >= 3:
+            set_backup_properties(args[1], args[2:])
+        else:
+            stderr("usage: zbackup --set <filesystem> <property=value> ...")
+            sys.exit(1)
+    elif options.unset:
+        # just unset the backup properties
+        if len(args) >= 3:
+            unset_backup_properties(args[1], args[2:])
+        else:
+            stderr("usage: zbackup --unset <filesystem> <property> ...")
+            sys.exit(1)
     else:
         if len(args) == 2:
             backup_by_properties(args[1], options)
         else:
-            stderr("%s" % usage)
+            stderr("usage: zbackup <tier>")
             sys.exit(1)
 
 
