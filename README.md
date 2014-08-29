@@ -63,6 +63,8 @@ The utilities let you do this:
 
    Run `zbackup --help` for the usage, and complete options.
 
+   Run `zbackup --list` to see what backup properties are set.
+
 The repository, bug tracker and Web site for this tool is at [http://github.com/Rudd-O/zfs-tools](http://github.com/Rudd-O/zfs-tools).  Comments to me through rudd-o@rudd-o.com.
 
 ##Setting up
