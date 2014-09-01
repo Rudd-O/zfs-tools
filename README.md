@@ -31,42 +31,10 @@ The utilities let you do this:
    
    Run `zreplicate --help` for a compendium of options you may use.
 
-5. zbackup
+5. zbackup:
    a command to snapshot and replicate filesystems according to their user properties.
-   The following user properties define the behaviour, where *tier* is
-   arbitrary, but expected to be e.g. hourly, daily, weekly, etc.
-   All properties must be in the module 'com.github.tesujimath.zbackup',
-   so prefix each property listed here with 'com.github.tesujimath.zbackup:',
-   following the best practice for user properties as described on the zfs man page.
-   - *tier*-snapshots      - turns on snapshots, and limits how many snapshots to keep in given tier
-   - *tier*-snapshot-limit - limits how many snapshots to keep in given tier (overrides *tier*-snapshots)
-   - replica               - comma-separated list of dstdatasetname, as used by zreplicate
-   - replicate             - *tier*, which tier to replicate
-
-   Snapshotting for a given tier will be active as soon as *tier*-snapshots is defined
-   with an integer value, with a property source of local.  Received properties will not
-   cause new snapshots to be taken.
-
-   However, old snapshots will be reaped if the property source is local or
-   received.  This means that reaping old snapshots on a destination replica is
-   driven by the received property *tier*-snapshots, or the property
-   *tier*-snapshot-limit, with the latter overriding the former if both are
-   present.  Note that the limit property functions even if its source is
-   inherited.
-
-   Replication is done for a single tier only, as per the 'replicate' property.
-   Again, these properties must have the source being local to have any effect.
-   Note that the --no-replication-stream option for zreplicate is used, so that
-   no destination replica snapshots and filesystems are deleted as a side-effect
-   of running a backup.  To purge obsolete snapshots from the destination, it is
-   recommended to use the behaviour described in the previous paragraph.
-
-   Run `zbackup --help` for the usage, and complete options.
-
-   Run `zbackup --list` to see what backup properties are set.
-
-   Setting and unsetting of the properties used by zbackup is most easily done
-   using zbackup --set, and zbackup --unset.
+   This uses zsnap and zreplicate to do the work, which is all driven by properties.
+   For details, see this [further description of zbackup](doc/README-zbackup.md).
 
 The repository, bug tracker and Web site for this tool is at [http://github.com/Rudd-O/zfs-tools](http://github.com/Rudd-O/zfs-tools).  Comments to me through rudd-o@rudd-o.com.
 
