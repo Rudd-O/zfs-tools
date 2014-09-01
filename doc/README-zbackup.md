@@ -54,6 +54,17 @@
 # zbackup --list
 ```
 
+## Error reporting
+It is clearly rather important to know if zbackup fails.  Any or all of these three mechanisms can be used:
+
+1. Non-zero exit status
+
+2. Error text appearing on stderr.
+
+3. Optionally, use the -e option to email the given recipient on failure.
+
+It is recommended to use these to check carefully that replication in particular is working as intended.
+
 ## The dangers of ZFS replication streams when used for backup
 The default behaviour of zsnap is to use ZFS replication streams, i.e. `zfs send -R`.  This is inhibited when zsnap is called from zbackup, using the `--no-replication-stream` option to zsnap.
 
