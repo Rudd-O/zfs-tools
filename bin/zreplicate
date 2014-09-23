@@ -5,7 +5,12 @@ import sys, os
 sys.path.append(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir, "src")
 )
+import itertools
+import multiprocessing
 import optparse
+import time
+import traceback
+import urllib
 from zfstools.connection import ZFSConnection
 from zfstools.util import stderr, verbose_stderr, set_verbose
 from zfstools.sync import recursive_replicate, optimize
@@ -28,6 +33,12 @@ parser.add_option('--known-hosts-file', action='store', dest='knownhostsfile', d
 parser.add_option('--create-destination', action='store_true', dest='create_destination', default=False, help='create destination dataset if missing (default: %default)')
 parser.add_option('--replication-stream', action='store_true', dest='replication_stream', default=True, help='use zfs send -R, which may destroy destination filesystems/snapshots (default: %default)')
 parser.add_option('--no-replication-stream', action='store_false', dest='replication_stream', help='don\'t use zfs send -R, to protect destination filesystems/snapshots')
+parser.add_option('--lock-source', action='store_true', dest='lock_src', default=False, help='zflock the source dataset (default: %default)')
+parser.add_option('--lock-destination', action='store_true', dest='lock_dst', default=False, help='zflock the destination dataset (default: %default)')
+parser.add_option('--parallel', action='store', dest='parallel', type="int", default=1, metavar='N', help='number of parallel processes (default: %default)')
+parser.add_option('--parallel-log', action='store', dest='parallel_log', type="string", default="/var/log/zfs-tools/zreplicate.%(filesystem)s.%(timestamp)s", metavar='PATTERN', help='log file pattern to use in parallel mode (default: %default)')
+parser.add_option('--timeformat', action='store', dest='timeformat', default="%Y-%m-%d-%H%M%S", help='time format for logfiles (default: %default)')
+parser.add_option('--utc', action='store_true', dest='utc', default=False, help='Use UTC for timestamps (default: no)')
 opts,args = parser.parse_args(sys.argv[1:])
 
 try:
@@ -56,8 +67,8 @@ set_verbose(opts.verbose)
 
 # ================ start program algorithm ===================
 
-src_conn = ZFSConnection(source_host, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile,  knownhostsfile=opts.knownhostsfile)
-dst_conn = ZFSConnection(destination_host, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile, knownhostsfile=opts.knownhostsfile)
+src_conn = ZFSConnection(source_host, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile,  knownhostsfile=opts.knownhostsfile, verbose=opts.verbose)
+dst_conn = ZFSConnection(destination_host, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile, knownhostsfile=opts.knownhostsfile, verbose=opts.verbose)
 
 verbose_stderr("Replicating dataset %s:%s into %s:%s..." % (
 		source_host,source_dataset_name,
@@ -122,47 +133,103 @@ if opts.verbose:
 	send_opts.append("-v")
 	receive_opts.append("-v")
 
-verbose_stderr("=================================")
-for op,src,dst,srcs,dsts in optimized_operation_schedule:
-        source_dataset_path = src.get_path()
+def transfer(operation):
+    op,src,dst,srcs,dsts = operation
+    source_dataset_path = src.get_path()
 
-        if dst:
-            destination_dataset_path = dst.get_path()
+    if dst:
+        destination_dataset_path = dst.get_path()
+    else:
+        commonbase = os.path.commonprefix([src.get_path(),source_dataset.get_path()])
+        remainder = src.get_path()[len(commonbase):]
+        destination_dataset_path = destination_dataset.get_path() + remainder
+
+    if op == "create_stub":
+        verbose_stderr("Creating (%s) %s in destination" % (op,destination_dataset_path))
+        if not opts.dryrun:
+            dst_conn.create_dataset(destination_dataset_path)
+
+    else:
+        destination_snapshot_path = dsts.get_path()
+        if srcs:
+            this_send_opts = ["-I", "@" + srcs.name]
         else:
-            commonbase = os.path.commonprefix([src.get_path(),source_dataset.get_path()])
-            remainder = src.get_path()[len(commonbase):]
-            destination_dataset_path = destination_dataset.get_path() + remainder
+            this_send_opts = []
+        if "recursive" in op and opts.replication_stream:
+            this_send_opts.append("-R")
+        verbose_stderr("Replicating (%s) %s to %s" % (op,source_dataset_path,destination_dataset_path))
+        verbose_stderr("Base snapshot available in destination: %s" % srcs)
+        verbose_stderr("Target snapshot available in source:    %s" % dsts)
 
-        if op == "create_stub":
-            verbose_stderr("Creating (%s) %s in destination" % (op,destination_dataset_path))
-            if not opts.dryrun:
-                dst_conn.create_dataset(destination_dataset_path)
+        locksrcdataset = source_dataset_path if opts.lock_src else None
+        lockdstdataset = destination_dataset_path if opts.lock_dst else None
 
-        else:
-            destination_snapshot_path = dsts.get_path()
-            if srcs:
-                this_send_opts = ["-I", "@" + srcs.name]
-            else:
-                this_send_opts = []
-            if "recursive" in op and opts.replication_stream:
-                this_send_opts.append("-R")
-            verbose_stderr("Replicating (%s) %s to %s" % (op,source_dataset_path,destination_dataset_path))
-            verbose_stderr("Base snapshot available in destination: %s" % srcs)
-            verbose_stderr("Target snapshot available in source:    %s" % dsts)
+        if not opts.dryrun:
+            src_conn.transfer(
+                dst_conn,
+                destination_snapshot_path,
+                destination_dataset_path,
+                showprogress=opts.progress,
+                compression=opts.force_compression,
+                ratelimit=opts.ratelimit,
+                bufsize=bufsize,
+                send_opts=send_opts+this_send_opts,
+                receive_opts=receive_opts,
+                locksrcdataset=locksrcdataset,
+                lockdstdataset=lockdstdataset
+            )
 
-            if not opts.dryrun:
-                src_conn.transfer(
-                    dst_conn,
-                    destination_snapshot_path,
-                    destination_dataset_path,
-                    showprogress=opts.progress,
-                    compression=opts.force_compression,
-                    ratelimit=opts.ratelimit,
-                    bufsize=bufsize,
-                    send_opts=send_opts+this_send_opts,
-                    receive_opts=receive_opts
-                )
+timestamp = None
+def set_timestamp(t):
+    global timestamp
+    timestamp = t
+
+def redirect_log(filesystem, timestamp):
+    """Redirect stdout and stderr to logfile for this filesystem/timestamp."""
+    logfile = opts.parallel_log % {'timestamp': timestamp, 'filesystem': urllib.quote(filesystem, "")}
+    logdir = os.path.dirname(logfile)
+    if not os.path.isdir(logdir):
+        try:
+            os.remove(logdir)
+        except OSError:
+            pass
+        try:
+            os.makedirs(logdir, 0755)
+        except OSError:
+            pass
+    logfd = os.open(logfile, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_APPEND)
+    os.dup2(logfd, sys.stdout.fileno())
+    os.dup2(logfd, sys.stderr.fileno())
+
+def parallel_transfer(operations):
+    """Wraps transfer(), to redirect stdout/stderr into separate files."""
+    # we need to catch exceptions, as these can't be pickled back across
+    # the multiprocessing interface
+    try:
+        if len(operations) > 0:
+            src = operations[0][1] # a representative, all are the same
+            source_dataset_path = src.get_path()
+            redirect_log(source_dataset_path, timestamp)
+            for operation in operations:
+                transfer(operation)
+    except:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        stderr("zreplicate failed: %s" % traceback.format_exception(exc_type, exc_value, exc_traceback))
+
+if opts.parallel == 1:
+    verbose_stderr("=================================")
+    for operation in optimized_operation_schedule:
+        transfer(operation)
         verbose_stderr("=================================")
+else:
+    verbose_stderr("Logging in parallel mode to %s" % opts.parallel_log)
+
+    operations_grouped_by_source = []
+    for k, g in itertools.groupby(
+            optimized_operation_schedule,
+            lambda op: op[1]):
+        operations_grouped_by_source.append(list(g))
+    p = multiprocessing.Pool(processes=opts.parallel, initializer=set_timestamp, initargs=(time.strftime(opts.timeformat, time.gmtime() if opts.utc else time.localtime()),))
+    p.map(parallel_transfer, operations_grouped_by_source)
 
 verbose_stderr("Replication complete.")
-
