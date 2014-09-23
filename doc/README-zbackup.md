@@ -21,6 +21,13 @@
 
    Replication is done for a single tier only, as per the 'replicate' property. Again, these properties must have the source being local to have any effect. Note that the `--no-replication-stream` option for zreplicate is used, so that no destination replica snapshots and filesystems are deleted as a side-effect of running a backup.  To purge obsolete snapshots from the destination, it is recommended to use the behaviour described in the previous paragraph.
 
+## Locking of filesystems during replication
+Replicating a large filesystem can take many hours, perhaps so long that another zbackup instance is started by cron in the meantime.  For this reason, all filesystems to be replicated are first locked using `zlock`.  A subsequent `zbackup` will simply skip any such locked filesystem.
+
+To manually disable replication of a filesystem, `zlock` may be run by hand.  This may be useful for example when migrating replicas from one replica server to another.  See `zlock --help` for details.
+
+Note that `zlock` has no effect beyond disabling replication by `zbackup`.  (It does nothing at the ZFS filesystem level.  It simply creates a lockfile in */var/lib/zfs-tools/zlock*, which is checked only by later instances of `zlock`.)
+
 ## ssh authentication
    It is up to you to arrange your own ssh authentication.  For example, you could use an ssh agent and ssh public key authentication, or say Kerberos.  (The crontab example below assumes Kerberos, which explains the call to kinit to acquire a Kerberos ticket from the local keytab file.)
 ## Interfacing with cron

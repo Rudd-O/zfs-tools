@@ -36,6 +36,10 @@ The utilities let you do this:
    This uses zsnap and zreplicate to do the work, which is all driven by properties.
    For details, see this [further description of zbackup](doc/README-zbackup.md).
 
+6. zlock:
+   a command to lock a filesystem against replication by zbackup.
+   For details, see this [further description of zbackup](doc/README-zbackup.md).
+
 The repository, bug tracker and Web site for this tool is at [http://github.com/Rudd-O/zfs-tools](http://github.com/Rudd-O/zfs-tools).  Comments to me through rudd-o@rudd-o.com.
 
 ##Setting up
