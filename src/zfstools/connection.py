@@ -38,13 +38,14 @@ class ZFSConnection:
     _dirty = True
     _trust = False
     _properties = None
-    def __init__(self,host="localhost", trust=False, sshcipher=None, properties=None, identityfile=None, knownhostsfile=None):
+    def __init__(self,host="localhost", trust=False, sshcipher=None, properties=None, identityfile=None, knownhostsfile=None, verbose=False):
         self.host = host
         self._trust = trust
         self._properties = properties if properties else []
         self._poolset= PoolSet()
+        self.verbose = verbose
         if host in ['localhost','127.0.0.1']:
-            self.command = ["zfs"]
+            self.command = []
         else:
             self.command = ["ssh","-o","BatchMode yes","-a","-x"]
             if self._trust:
@@ -56,60 +57,70 @@ class ZFSConnection:
                 self.command.extend(["-i",identityfile])
             if knownhostsfile != None:
                 self.command.extend(["-o","UserKnownHostsFile %s" % knownhostsfile])
-            self.command.extend([self.host,"zfs"])
+            self.command.extend([self.host])
 
     def _get_poolset(self):
         if self._dirty:
             properties = [ 'creation' ] + self._properties
-            stdout2 = subprocess.check_output(self.command + ["list", "-Hpr", "-o", ",".join( ['name'] + properties ), "-t", "all"])
+            stdout2 = subprocess.check_output(self.command + ["zfs", "list", "-Hpr", "-o", ",".join( ['name'] + properties ), "-t", "all"])
             self._poolset.parse_zfs_r_output(stdout2,properties)
             self._dirty = False
         return self._poolset
     pools = property(_get_poolset)
 
     def create_dataset(self,name):
-        subprocess.check_call(self.command + ["create", name])
+        subprocess.check_call(self.command + ["zfs", "create", name])
         self._dirty = True
         return self.pools.lookup(name)
 
     def destroy_dataset(self, name):
-        subprocess.check_call(self.command + ["destroy", name])
+        subprocess.check_call(self.command + ["zfs", "destroy", name])
         self._dirty = True
 
     def destroy_recursively(self, name):
-        subprocess.check_call(self.command + ["destroy", '-r', name])
+        subprocess.check_call(self.command + ["zfs", "destroy", '-r', name])
         self._dirty = True
 
     def snapshot_recursively(self,name,snapshotname,properties={}):
         plist = sum( map( lambda x: ['-o', '%s=%s' % x ], properties.items() ), [] )
-        subprocess.check_call(self.command + ["snapshot", "-r" ] + plist + [ "%s@%s" % (name, snapshotname)])
+        subprocess.check_call(self.command + ["zfs", "snapshot", "-r" ] + plist + [ "%s@%s" % (name, snapshotname)])
         self._dirty = True
-    
-    def send(self,name,opts=None,bufsize=-1,compression=False):
+
+    def send(self,name,opts=None,bufsize=-1,compression=False,lockdataset=None):
         if not opts: opts = []
         cmd = list(self.command)
         if compression and cmd[0] == 'ssh': cmd.insert(1,"-C")
-        cmd = cmd + ["send"] + opts + [name]
-        p = SpecialPopen(cmd,stdin=open(os.devnull),stdout=subprocess.PIPE,bufsize=bufsize)
+        if lockdataset is not None:
+            cmd += ["zflock"]
+            if self.verbose:
+                cmd += ["-v"]
+            cmd += [lockdataset, "--"]
+        cmd += ["zfs", "send"] + opts + [name]
+        p = SpecialPopen(cmd,stdin=file(os.devnull),stdout=subprocess.PIPE,bufsize=bufsize)
         return p
 
-    def receive(self,name,pipe,opts=None,bufsize=-1,compression=False):
+    def receive(self,name,pipe,opts=None,bufsize=-1,compression=False,lockdataset=None):
         if not opts: opts = []
         cmd = list(self.command)
         if compression and cmd[0] == 'ssh': cmd.insert(1,"-C")
-        cmd = cmd + ["receive"] + opts + [name]
+        if lockdataset is not None:
+            cmd += ["zflock"]
+            if self.verbose:
+                cmd += ["-v"]
+            cmd += [lockdataset, "--"]
+        cmd = cmd + ["zfs", "receive"] + opts + [name]
         p = SpecialPopen(cmd,stdin=pipe,bufsize=bufsize)
         return p
 
-    def transfer(self, dst_conn, s, d, fromsnapshot=None, showprogress=False, bufsize=-1, send_opts=None, receive_opts=None, ratelimit=-1, compression=False):
+    def transfer(self, dst_conn, s, d, fromsnapshot=None, showprogress=False, bufsize=-1, send_opts=None, receive_opts=None, ratelimit=-1, compression=False, locksrcdataset=None, lockdstdataset=None):
         if send_opts is None: send_opts = []
         if receive_opts is None: receive_opts = []
-        
+
         queue_of_killables = Queue()
 
         if fromsnapshot: fromsnapshot=["-i",fromsnapshot]
         else: fromsnapshot = []
-        sndprg = self.send(s, opts=[] + fromsnapshot + send_opts, bufsize=bufsize, compression=compression)
+        sndprg = self.send(s, opts=[] + fromsnapshot + send_opts, bufsize=bufsize, compression=compression, lockdataset=locksrcdataset)
         sndprg_supervisor = Thread(target=lambda: queue_of_killables.put((sndprg, sndprg.wait())))
         sndprg_supervisor.start()
 
@@ -126,7 +137,7 @@ class ZFSConnection:
             barprg = sndprg
 
         try:
-                        rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts,bufsize=bufsize,compression=compression)
+                        rcvprg = dst_conn.receive(d,pipe=barprg.stdout,opts=["-Fu"]+receive_opts,bufsize=bufsize,compression=compression, lockdataset=lockdstdataset)
                         rcvprg_supervisor = Thread(target=lambda: queue_of_killables.put((rcvprg, rcvprg.wait())))
                         rcvprg_supervisor.start()
                         barprg.stdout.close()
