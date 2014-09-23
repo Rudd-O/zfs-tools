@@ -224,7 +224,6 @@ if opts.parallel == 1:
         verbose_stderr("=================================")
 else:
     verbose_stderr("Logging in parallel mode to %s" % opts.parallel_log)
-
     operations_grouped_by_source = []
     for k, g in itertools.groupby(
             optimized_operation_schedule,
