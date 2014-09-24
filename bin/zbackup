@@ -133,6 +133,8 @@ Replication is only performed if a zlock can be acquired on the filesystem."""
             verbose_stderr("%s" % ' '.join(zlock_unlock_command + zlock_args))
             subprocess.check_call(zlock_unlock_command + zlock_args)
     else:
+        if options.email_failure != None:
+            send_failure_email(options.email_failure, "%s has a zlock in place, use zlock list -v to troubleshoot" % filesystem)
         verbose_stderr("skipping replication for %s" % filesystem)
         
 
