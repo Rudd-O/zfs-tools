@@ -13,7 +13,9 @@
 import optparse
 import os
 import os.path
+from stat import ST_MTIME
 import sys
+import time
 from zfstools.util import stderr, verbose_stderr, set_verbose
 
 LOCKDIR = "/var/lib/zfs-tools/zlock"
@@ -93,9 +95,12 @@ def unlock(filesystem, options):
 
 def list_locks(options):
     for lockfile in os.listdir(LOCKDIR):
+        lockpath = os.path.join(LOCKDIR, lockfile)
         filesystem = lockfile2filesystem(lockfile)
         if options.verbose:
-            print("%s%s" % (filesystem, lockpath_comment(os.path.join(LOCKDIR, lockfile), " - ")))
+            mtime = os.stat(lockpath)[ST_MTIME]
+            timestamp = time.strftime("%Y-%m-%d-%H%M", time.localtime(mtime))
+            print("%s %s%s" % (filesystem, timestamp, lockpath_comment(lockpath, " ")))
         else:
             print("%s" % filesystem)
 
