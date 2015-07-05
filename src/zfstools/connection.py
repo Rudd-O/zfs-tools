@@ -34,9 +34,11 @@ class ZFSConnection:
     _poolset = None
     _dirty = True
     _trust = False
-    def __init__(self,host="localhost", trust=False, sshcipher=None):
+    _properties = None
+    def __init__(self,host="localhost", trust=False, sshcipher=None, properties=[]):
         self.host = host
         self._trust = trust
+        self._properties = properties
         self._poolset= PoolSet()
         if host in ['localhost','127.0.0.1']:
             self.command = ["zfs"]
@@ -51,8 +53,9 @@ class ZFSConnection:
 
     def _get_poolset(self):
         if self._dirty:
-            stdout2 = subprocess.check_output(self.command + ["get", "-Hpr", "-o", "name,value", "creation"])
-            self._poolset.parse_zfs_r_output(stdout2)
+            properties = [ 'creation' ] + self._properties
+            stdout2 = subprocess.check_output(self.command + ["list", "-Hpr", "-o", ",".join( ['name'] + properties ), "-s", "creation", "-t", "all"])
+            self._poolset.parse_zfs_r_output(stdout2,properties)
             self._dirty = False
         return self._poolset
     pools = property(_get_poolset)
@@ -70,8 +73,13 @@ class ZFSConnection:
         subprocess.check_call(self.command + ["destroy", '-r', name])
         self._dirty = True
 
-    def snapshot_recursively(self,name,snapshotname):
-        subprocess.check_call(self.command + ["snapshot", "-r", "%s@%s" % (name, snapshotname)])
+    def snapshot_recursively(self,name,snapshotname,properties={}):
+        plist = sum( map( lambda x: ['-o', '%s=%s' % x ], properties.items() ), [] )
+        subprocess.check_call(self.command + ["snapshot", "-r" ] + plist + [ "%s@%s" % (name, snapshotname)])
+        self._dirty = True
+
+    def set_properties(self,properties):
+        self._properties = properties
         self._dirty = True
 
     def send(self,name,opts=None,bufsize=-1,compression=False):
