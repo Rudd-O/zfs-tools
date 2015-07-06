@@ -18,9 +18,6 @@ class Dataset(object):
             self.parent = parent
             self.parent.add_child(self)
 
-    def __getattr__(self,name):
-        return self._properties[ name ]
-
     def add_child(self, child):
         self.children.append(child)
         return child
@@ -94,9 +91,6 @@ class Dataset(object):
         return "<Dataset:  %s>" % self.get_path()
     __repr__ = __str__
 
-    def get_creation(self):
-        return self.creation
-
     def get_property(self,name):
         return self._properties[ name ]
 
@@ -150,6 +144,7 @@ class PoolSet:  # maybe rewrite this as a dataset or something?
     def parse_zfs_r_output(self, creationtimes, properties):
         def extract_properties( line ):
             items = s.strip().split( '\t' )
+            assert len( items ) == (1 + len( properties ) )
             propvalues = map( lambda x: None if x == '-' else x, items[ 1: ] )
             return [ items[ 0 ], zip( properties, propvalues ) ]
 

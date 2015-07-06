@@ -35,10 +35,10 @@ class ZFSConnection:
     _dirty = True
     _trust = False
     _properties = None
-    def __init__(self,host="localhost", trust=False, sshcipher=None, properties=[]):
+    def __init__(self,host="localhost", trust=False, sshcipher=None, properties=None):
         self.host = host
         self._trust = trust
-        self._properties = properties
+        self._properties = properties if properties else []
         self._poolset= PoolSet()
         if host in ['localhost','127.0.0.1']:
             self.command = ["zfs"]
@@ -77,11 +77,7 @@ class ZFSConnection:
         plist = sum( map( lambda x: ['-o', '%s=%s' % x ], properties.items() ), [] )
         subprocess.check_call(self.command + ["snapshot", "-r" ] + plist + [ "%s@%s" % (name, snapshotname)])
         self._dirty = True
-
-    def set_properties(self,properties):
-        self._properties = properties
-        self._dirty = True
-
+    
     def send(self,name,opts=None,bufsize=-1,compression=False):
         if not opts: opts = []
         cmd = list(self.command)
