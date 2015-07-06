@@ -19,8 +19,12 @@ parser.add_option('-p', '--prefix', action='store', dest='prefix', default="auto
 parser.add_option('-P', '--property', action='store', dest='property', help='property (name=value) to apply to snapshots')
 parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='be verbose (default: %default)')
 parser.add_option('-t', '--timeformat', action='store', dest='timeformat', default="%Y-%m-%d-%H%M%S", help='postfix time format to append to snapshot names (default: %default, MUST be sortable using a general sort)')
+parser.add_option('--utc', action='store_true', dest='utc', default=False, help='Use UTC for timestamps (default: no)')
 parser.add_option('-n', '--dry-run', action='store_true', dest='dryrun', default=False, help='don\'t actually manipulate any file systems')
 parser.add_option('--nosnapshot', action='store_true', dest='nosnapshot', default=False, help='don\'t create new snapshot, only delete according to keep value (default: %default)')
+parser.epilog =  """The --prefix and --property options are also used (if specified) to filter the snapshots to delete. 
+That is, only those snapshots that start with PREFIX and have a property named NAME with a value of
+VALUE will be considered for deletion."""
 opts,args = parser.parse_args(sys.argv[1:])
 
 try:
@@ -40,12 +44,12 @@ else:
 set_verbose(opts.verbose)
 
 snapshot_prefix = opts.prefix
-snapshot_postfix = lambda: time.strftime(opts.timeformat,time.gmtime())
+snapshot_postfix = lambda: time.strftime(opts.timeformat, time.gmtime() if opts.utc else time.localtime() )
 
 snapshot_properties = {}
 
 if opts.property:
-	split = opts.property.split('=')
+	split = opts.property.split('=',1)
 	if len(split) != 2:
 		parser.error('--property should be of the form name=value')
 		sys.exit(os.EX_USAGE)
@@ -57,10 +61,7 @@ if opts.property:
 
 src_conn = ZFSConnection(source_host,properties=snapshot_properties.keys())
 snapshot_unique_name = snapshot_prefix + snapshot_postfix()
-name_flt = lambda x: x.name.startswith(snapshot_prefix)
-flt = name_flt
-if opts.property:
-	flt = lambda x: name_flt(x) and x.get_property(snapshot_properties.keys()[0])==snapshot_properties.values()[0]
+flt = lambda x: x.name.startswith(snapshot_prefix) and (not snapshot_properties or x.get_property(snapshot_properties.keys()[0])==snapshot_properties.values()[0])
 
 verbose_stderr("Assessing that the specified dataset exists...")
 try:
@@ -71,14 +72,14 @@ except KeyError:
 	sys.exit(2)
 
 if keep > 0 and not opts.nosnapshot:
-	verbose_stderr("Snapshotting dataset %s:%s" % (source_host, source_dataset_name))
+	verbose_stderr("Snapshotting dataset %s:%s as %s" % (source_host, source_dataset_name, snapshot_unique_name))
 
 	if not opts.dryrun:
 		src_conn.snapshot_recursively(source_dataset_name, snapshot_unique_name, snapshot_properties)
 		# FIXME: what follows is retarded design
 		src_conn.pools  # trigger update
 
-ssn = sorted([ (x.get_creation(), x.name, x) for x in source_dataset.get_snapshots(flt) ])
+ssn = sorted([ (x.get_property('creation'), x.name, x) for x in source_dataset.get_snapshots(flt) ])
 
 if opts.dryrun and keep > 0 and not opts.nosnapshot:
 	# simulate the addition of a new dataset
