@@ -141,12 +141,14 @@ class PoolSet:  # maybe rewrite this as a dataset or something?
 
         return dset
 
-    def parse_zfs_r_output(self, creationtimes, properties):
+    def parse_zfs_r_output(self, creationtimes, properties = None ):
+        properties = ['name', 'creation'] if properties == None else properties
+        
         def extract_properties( line ):
             items = s.strip().split( '\t' )
-            assert len( items ) == (1 + len( properties ) )
+            assert len( items ) == len( properties )
             propvalues = map( lambda x: None if x == '-' else x, items[ 1: ] )
-            return [ items[ 0 ], zip( properties, propvalues ) ]
+            return [ items[ 0 ], zip( properties[ 1: ], propvalues ) ]
 
         # make into array
         creations = OrderedDict([ extract_properties( s ) for s in creationtimes.splitlines() if s.strip() ])
