@@ -21,12 +21,6 @@ class TestRecursiveReplicate(unittest.TestCase):
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''karen   98.8G   13.4G   30K     none
-karen/ROOT      95.2G   13.4G   30K     none
-karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-'''),
 x('''karen   1359351119
 karen/ROOT      1359351169
 karen/ROOT/fedora       1359351172
@@ -35,13 +29,6 @@ karen/plonezeo  1360136643
 ''')
         )
         dst.parse_zfs_r_output(
-x('''target   98.8G   13.4G   30K     none
-target/karen   98.8G   13.4G   30K     none
-target/karen/ROOT      95.2G   13.4G   30K     none
-target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-'''),
 x('''target   1359351109
 target/karen   1359351119
 target/karen/ROOT      1359351169
@@ -61,13 +48,6 @@ target/karen/plonezeo  1360136643
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''karen   98.8G   13.4G   30K     none
-karen/ROOT      95.2G   13.4G   30K     none
-karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
-'''),
 x('''karen   1359351119
 karen/ROOT      1359351169
 karen/ROOT/fedora       1359351172
@@ -77,13 +57,6 @@ karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
 ''')
         )
         dst.parse_zfs_r_output(
-x('''target   98.8G   13.4G   30K     none
-target/karen   98.8G   13.4G   30K     none
-target/karen/ROOT      95.2G   13.4G   30K     none
-target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-'''),
 x('''target   1359351109
 target/karen   1359351119
 target/karen/ROOT      1359351169
@@ -120,13 +93,6 @@ target/karen/plonezeo  1360136643
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''karen   98.8G   13.4G   30K     none
-karen/ROOT      95.2G   13.4G   30K     none
-karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
-'''),
 x('''karen   1359351119
 karen/ROOT      1359351169
 karen/ROOT/fedora       1359351172
@@ -136,14 +102,6 @@ karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
 ''')
         )
         dst.parse_zfs_r_output(
-x('''target   98.8G   13.4G   30K     none
-target/karen   98.8G   13.4G   30K     none
-target/karen/ROOT      95.2G   13.4G   30K     none
-target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
-'''),
 x('''target   1359351109
 target/karen   1359351119
 target/karen/ROOT      1359351169
@@ -164,14 +122,6 @@ target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''karen   98.8G   13.4G   30K     none
-karen/ROOT      95.2G   13.4G   30K     none
-karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
-karen/plonezeo@zfs-auto-snap_hourly-2013-03-20-0000     0       -       3.37G   -
-'''),
 x('''karen   1359351119
 karen/ROOT      1359351169
 karen/ROOT/fedora       1359351172
@@ -182,14 +132,6 @@ karen/plonezeo@zfs-auto-snap_hourly-2013-03-20-0000     1363686402
 ''')
         )
         dst.parse_zfs_r_output(
-x('''target   98.8G   13.4G   30K     none
-target/karen   98.8G   13.4G   30K     none
-target/karen/ROOT      95.2G   13.4G   30K     none
-target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
-'''),
 x('''target   1359351109
 target/karen   1359351119
 target/karen/ROOT      1359351169
@@ -218,13 +160,6 @@ target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''s   98.8G   13.4G   30K     none
-s/a  3.40G   13.4G   3.37G   /opt/plonezeo
-s/a@1     0       -       3.37G   -
-s/a@2     0       -       3.37G   -
-s/b@1     0       -       3.37G   -
-s/b@2     0       -       3.37G   -
-'''),
 x('''s   1359351119
 s/a  1360136643
 s/a@1     1363676402
@@ -234,13 +169,6 @@ s/b@2     1363686402
 ''')
         )
         dst.parse_zfs_r_output(
-x('''t   98.8G   13.4G   30K     none
-t/s   98.8G   13.4G   30K     none
-t/s/a  3.40G   13.4G   3.37G   /opt/plonezeo
-t/s/a@1     0       -       3.37G   -
-t/s/b  3.40G   13.4G   3.37G   /opt/plonezeo
-t/s/b@1     0       -       3.37G   -
-'''),
 x('''t   1359351109
 t/s   1359351119
 t/s/a  1360136643
@@ -276,14 +204,6 @@ t/s/b@1     1363676402
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''s   98.8G   13.4G   30K     none
-s/a  3.40G   13.4G   3.37G   /opt/plonezeo
-s/a@1     0       -       3.37G   -
-s/a@2     0       -       3.37G   -
-s/b@1     0       -       3.37G   -
-s/b@2     0       -       3.37G   -
-s/b@3     0       -       3.37G   -
-'''),
 x('''s   1359351119
 s/a  1360136643
 s/a@1     1363676402
@@ -294,13 +214,6 @@ s/b@3     1363686402
 ''')
         )
         dst.parse_zfs_r_output(
-x('''t   98.8G   13.4G   30K     none
-t/s   98.8G   13.4G   30K     none
-t/s/a  3.40G   13.4G   3.37G   /opt/plonezeo
-t/s/a@1     0       -       3.37G   -
-t/s/b  3.40G   13.4G   3.37G   /opt/plonezeo
-t/s/b@1     0       -       3.37G   -
-'''),
 x('''t   1359351109
 t/s   1359351119
 t/s/a  1360136643
@@ -353,18 +266,6 @@ t/s/b@1     1363676402
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''s   98.8G   13.4G   30K     none
-s@1     0       -       3.37G   -
-s@2     0       -       3.37G   -
-s/a  3.40G   13.4G   3.37G   /opt/plonezeo
-s/a@1     0       -       3.37G   -
-s/a@2     0       -       3.37G   -
-s/b  3.40G   13.4G   3.37G   /opt/plonezeo
-s/b@1     0       -       3.37G   -
-s/b@2     0       -       3.37G   -
-s/b@3     0       -       3.37G   -
-s/c   98.8G   13.4G   30K     none
-'''),
 x('''s   1359351119
 s@1     1363676402
 s@2     1363676403
@@ -379,14 +280,6 @@ s/c  1360136643
 ''')
         )
         dst.parse_zfs_r_output(
-x('''t   98.8G   13.4G   30K     none
-t/s   98.8G   13.4G   30K     none
-t/s@1     0       -       3.37G   -
-t/s/a  3.40G   13.4G   3.37G   /opt/plonezeo
-t/s/a@1     0       -       3.37G   -
-t/s/b  3.40G   13.4G   3.37G   /opt/plonezeo
-t/s/b@1     0       -       3.37G   -
-'''),
 x('''t   1359351109
 t/s   1359351119
 t/s@1     1363676402
@@ -451,19 +344,7 @@ t/s/b@1     1363676402
     def test_replicates_recursive_but_dest_parent_is_not_snapshotted(self):
         src = PoolSet()
         dst = PoolSet()
-        src.parse_zfs_r_output(
-x('''s   98.8G   13.4G   30K     none
-s@1     0       -       3.37G   -
-s@2     0       -       3.37G   -
-s/a  3.40G   13.4G   3.37G   /opt/plonezeo
-s/a@1     0       -       3.37G   -
-s/a@2     0       -       3.37G   -
-s/b  3.40G   13.4G   3.37G   /opt/plonezeo
-s/b@1     0       -       3.37G   -
-s/b@2     0       -       3.37G   -
-s/b@3     0       -       3.37G   -
-s/c   98.8G   13.4G   30K     none
-'''),
+        src.parse_zfs_r_output(\
 x('''s   1359351119
 s@1     1363676402
 s@2     1363676403
@@ -478,13 +359,6 @@ s/c  1360136643
 ''')
         )
         dst.parse_zfs_r_output(
-x('''t   98.8G   13.4G   30K     none
-t/s   98.8G   13.4G   30K     none
-t/s/a  3.40G   13.4G   3.37G   /opt/plonezeo
-t/s/a@1     0       -       3.37G   -
-t/s/b  3.40G   13.4G   3.37G   /opt/plonezeo
-t/s/b@1     0       -       3.37G   -
-'''),
 x('''t   1359351109
 t/s   1359351119
 t/s/a  1360136643
@@ -557,25 +431,6 @@ t/s/b@1     1363676402
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''s   98.8G   13.4G   30K     none
-s@1     0       -       3.37G   -
-s@2     0       -       3.37G   -
-s@3     0       -       3.37G   -
-s/a  3.40G   13.4G   3.37G   /opt/plonezeo
-s/a@1     0       -       3.37G   -
-s/a@2     0       -       3.37G   -
-s/a@3     0       -       3.37G   -
-s/a/x  3.40G   13.4G   3.37G   /opt/plonezeo
-s/a/x@1     0       -       3.37G   -
-s/a/x@2     0       -       3.37G   -
-s/a/x@3     0       -       3.37G   -
-s/b  3.40G   13.4G   3.37G   /opt/plonezeo
-s/b@1  3.40G   13.4G   3.37G   /opt/plonezeo
-s/b@2  3.40G   13.4G   3.37G   /opt/plonezeo
-s/b@3  3.40G   13.4G   3.37G   /opt/plonezeo
-s/b/x  3.40G   13.4G   3.37G   /opt/plonezeo
-s/c   98.8G   13.4G   30K     none
-'''),
 x('''s   1359351119
 s@1     1363676402
 s@2     1363676403
@@ -598,16 +453,6 @@ s/c  1360136643
 ''')
         )
         dst.parse_zfs_r_output(
-x('''t   98.8G   13.4G   30K     none
-t/s   98.8G   13.4G   30K     none
-t/s@1     0       -       3.37G   -
-t/s/a  3.40G   13.4G   3.37G   /opt/plonezeo
-t/s/a@1     0       -       3.37G   -
-t/s/a/x  3.40G   13.4G   3.37G   /opt/plonezeo
-t/s/a/x@1     0       -       3.37G   -
-t/s/b  3.40G   13.4G   3.37G   /opt/plonezeo
-t/s/b@1     0       -       3.37G   -
-'''),
 x('''t   1359351109
 t/s   1359351119
 t/s@1     1363676402
@@ -749,14 +594,6 @@ t/s/b@1     1363676402
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''s   98.8G   13.4G   30K     none
-s/a  3.40G   13.4G   3.37G   /opt/plonezeo
-s/a/x  3.40G   13.4G   3.37G   /opt/plonezeo
-s/a/x/t  3.40G   13.4G   3.37G   /opt/plonezeo
-s/a/x/t@1     0       -       3.37G   -
-s/a/x/t@2     0       -       3.37G   -
-s/a/x/t@3     0       -       3.37G   -
-'''),
 x('''s   1359351119
 s/a  1360136643
 s/a/x  1360136643
@@ -767,9 +604,6 @@ s/a/x/t@3     1363686404
 ''')
         )
         dst.parse_zfs_r_output(
-x('''t   98.8G   13.4G   30K     none
-t/s   98.8G   13.4G   30K     none
-'''),
 x('''t   1359351109
 t/s   1359351119
 ''')
@@ -1249,12 +1083,6 @@ class TestRecursiveClearObsolete(unittest.TestCase):
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''karen   98.8G   13.4G   30K     none
-karen/ROOT      95.2G   13.4G   30K     none
-karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-'''),
 x('''karen   1359351119
 karen/ROOT      1359351169
 karen/ROOT/fedora       1359351172
@@ -1263,13 +1091,6 @@ karen/plonezeo  1360136643
 ''')
         )
         dst.parse_zfs_r_output(
-x('''target   98.8G   13.4G   30K     none
-target/karen   98.8G   13.4G   30K     none
-target/karen/ROOT      95.2G   13.4G   30K     none
-target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-'''),
 x('''target   1359351109
 target/karen   1359351119
 target/karen/ROOT      1359351169
@@ -1289,13 +1110,6 @@ target/karen/plonezeo  1360136643
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''karen   98.8G   13.4G   30K     none
-karen/ROOT      95.2G   13.4G   30K     none
-karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
-'''),
 x('''karen   1359351119
 karen/ROOT      1359351169
 karen/ROOT/fedora       1359351172
@@ -1305,13 +1119,6 @@ karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
 ''')
         )
         dst.parse_zfs_r_output(
-x('''target   98.8G   13.4G   30K     none
-target/karen   98.8G   13.4G   30K     none
-target/karen/ROOT      95.2G   13.4G   30K     none
-target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-'''),
 x('''target   1359351109
 target/karen   1359351119
 target/karen/ROOT      1359351169
@@ -1331,12 +1138,6 @@ target/karen/plonezeo  1360136643
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''karen   98.8G   13.4G   30K     none
-karen/ROOT      95.2G   13.4G   30K     none
-karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-'''),
 x('''karen   1359351119
 karen/ROOT      1359351169
 karen/ROOT/fedora       1359351172
@@ -1345,14 +1146,6 @@ karen/plonezeo  1360136643
 ''')
         )
         dst.parse_zfs_r_output(
-x('''target   98.8G   13.4G   30K     none
-target/karen   98.8G   13.4G   30K     none
-target/karen/ROOT      95.2G   13.4G   30K     none
-target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
-'''),
 x('''target   1359351109
 target/karen   1359351119
 target/karen/ROOT      1359351169
@@ -1375,14 +1168,6 @@ target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''karen   98.8G   13.4G   30K     none
-karen/ROOT      95.2G   13.4G   30K     none
-karen/ROOT@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
-karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-karen/plonezeo@zfs-auto-snap_hourly-2013-03-20-0000     0       -       3.37G   -
-'''),
 x('''karen   1359351119
 karen/ROOT      1359351169
 karen/ROOT@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
@@ -1393,18 +1178,6 @@ karen/plonezeo@zfs-auto-snap_hourly-2013-03-20-0000     1363676402
 ''')
         )
         dst.parse_zfs_r_output(
-x('''target   98.8G   13.4G   30K     none
-target/karen   98.8G   13.4G   30K     none
-target/karen/ROOT      95.2G   13.4G   30K     none
-target/karen/ROOT@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
-target/karen/ROOT@zfs-auto-snap_hourly-2013-03-20-0000     0       -       3.37G   -
-target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-20-0000     0       -       3.37G   -
-target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-21-0000     0       -       3.37G   -
-target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-22-0000     0       -       3.37G   -
-'''),
 x('''target   1359351109
 target/karen   1359351119
 target/karen/ROOT      1359351169
@@ -1436,11 +1209,6 @@ target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-22-0000     1363676402
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''karen   98.8G   13.4G   30K     none
-karen/ROOT      95.2G   13.4G   30K     none
-karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-'''),
 x('''karen   1359351119
 karen/ROOT      1359351169
 karen/ROOT/fedora       1359351172
@@ -1448,14 +1216,6 @@ karen/ROOT/fedora/home  1359351174
 ''')
         )
         dst.parse_zfs_r_output(
-x('''target   98.8G   13.4G   30K     none
-target/karen   98.8G   13.4G   30K     none
-target/karen/ROOT      95.2G   13.4G   30K     none
-target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
-'''),
 x('''target   1359351109
 target/karen   1359351119
 target/karen/ROOT      1359351169
@@ -1481,20 +1241,10 @@ target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     1363676402
         src = PoolSet()
         dst = PoolSet()
         src.parse_zfs_r_output(
-x('''karen   98.8G   13.4G   30K     none
-'''),
 x('''karen   1359351119
 ''')
         )
         dst.parse_zfs_r_output(
-x('''target   98.8G   13.4G   30K     none
-target/karen   98.8G   13.4G   30K     none
-target/karen/ROOT      95.2G   13.4G   30K     none
-target/karen/ROOT/fedora       95.2G   13.4G   6.08G   /
-target/karen/ROOT/fedora/home  86.7G   13.4G   78.9G   /home
-target/karen/plonezeo  3.40G   13.4G   3.37G   /opt/plonezeo
-target/karen/plonezeo@zfs-auto-snap_hourly-2013-03-19-0000     0       -       3.37G   -
-'''),
 x('''target   1359351109
 target/karen   1359351119
 target/karen/ROOT      1359351169
