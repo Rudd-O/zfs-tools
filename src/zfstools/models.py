@@ -142,11 +142,19 @@ class PoolSet:  # maybe rewrite this as a dataset or something?
         return dset
 
     def parse_zfs_r_output(self, creationtimes, properties = None ):
-        properties = ['name', 'creation'] if properties == None else properties
-        
+        """Parse the output of tab-separated zfs list.
+
+        properties must be a list of property names expected to be found as
+        tab-separated entries on each line of creationtimes after the
+        dataset name and a tab.
+        E.g. if properties passed here was ['creation'], we would expect
+        each creationtimes line to look like 'dataset	3249872348'
+        """
+        properties = ['name', 'creation'] if properties == None else ['name'] + properties
+
         def extract_properties( line ):
             items = s.strip().split( '\t' )
-            assert len( items ) == len( properties )
+            assert len( items ) == len( properties ), (properties, items)
             propvalues = map( lambda x: None if x == '-' else x, items[ 1: ] )
             return [ items[ 0 ], zip( properties[ 1: ], propvalues ) ]
 
