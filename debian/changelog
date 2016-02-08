@@ -1,3 +1,9 @@
+zfs-tools (0.4.3ubuntu1) wily; urgency=low
+
+  * add dist tag to release version in bdist_rpm
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Mon, 08 Feb 2015 06:25:34 -0100
+
 zfs-tools (0.4.2ubuntu1) wily; urgency=low
 
   * fix bug with zsnap, and incorporate changes from mdcurtis
