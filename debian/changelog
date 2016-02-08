@@ -1,3 +1,9 @@
+zfs-tools (0.4.2ubuntu1) wily; urgency=low
+
+  * fix bug with zsnap, and incorporate changes from mdcurtis
+
+ -- Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>  Mon, 08 Feb 2015 06:19:58 -0100
+
 zfs-tools (0.4.1ubuntu1) raring; urgency=low
 
   * fix indentation bug causing multiple syncs in parallel
