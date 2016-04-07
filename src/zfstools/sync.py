@@ -16,7 +16,7 @@ def recursive_replicate(s, d):
     all_snapshots = []
     if s: all_snapshots.extend(s.get_snapshots())
     if d: all_snapshots.extend(d.get_snapshots())
-    all_snapshots = [ y[1] for y in sorted([ (x.get_creation(), x.name) for x in all_snapshots ]) ]
+    all_snapshots = [ y[1] for y in sorted([ (x.get_property('creation'), x.name) for x in all_snapshots ]) ]
     snapshot_pairs = []
     for snap in all_snapshots:
         try: ssnap = s.get_snapshot(snap)
@@ -50,7 +50,7 @@ def recursive_replicate(s, d):
         if d is not None and d.get_snapshots():
             warnings.warn("Asked to replicate %s into %s but %s has snapshots and both have no snapshots in common!" % (s, d, d))
         # see source snapshots
-        full_source_snapshots = [ y[1] for y in sorted([ (x.get_creation(), x) for x in s.get_snapshots() ]) ]
+        full_source_snapshots = [ y[1] for y in sorted([ (x.get_property('creation'), x) for x in s.get_snapshots() ]) ]
         # send first snapshot as full snapshot
         sched.append(("full", s, d, None, full_source_snapshots[0]))
         if len(full_source_snapshots) > 1:
