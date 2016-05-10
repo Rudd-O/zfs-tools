@@ -40,7 +40,7 @@ setup(
 	license="GPL",
 	url='http://github.com/Rudd-O/zfs-tools',
 	package_dir=dict([
-					("zfstools", "src/zfstools"),
+					("", "src"),
 					]),
 	classifiers = classifiers,
 	packages=["zfstools"],
