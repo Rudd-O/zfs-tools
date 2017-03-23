@@ -23,6 +23,7 @@ parser.add_option('-v', '--verbose', action='store_true', dest='verbose', defaul
 parser.add_option('-t', '--trust', action='store_true', dest='trust', default=False, help='automatically trust unknown or mismatched SSH keys of remote hosts (default: %default)')
 parser.add_option('-c', '--clear-obsolete', action='store_true', dest='clear_obsolete', default=False, help='automatically destroy file systems and snapshots at the destination that are no longer present in the source (default: %default)')
 parser.add_option('--ssh-cipher', action='store', dest='sshcipher', default=None, type="string", help='ssh cipher, careful selection of which may increase performance (default: as per ssh_config)')
+parser.add_option('--identity-file', action='store', dest='identityfile', default=None, type="string", help='path to the SSH identity file (-i) to use (default: as per ssh_config)')
 parser.add_option('--create-destination', action='store_true', dest='create_destination', default=False, help='create destination dataset if missing (default: %default)')
 parser.add_option('--replication-stream', action='store_true', dest='replication_stream', default=True, help='use zfs send -R, which may destroy destination filesystems/snapshots (default: %default)')
 parser.add_option('--no-replication-stream', action='store_false', dest='replication_stream', help='don\'t use zfs send -R, to protect destination filesystems/snapshots')
@@ -54,8 +55,8 @@ set_verbose(opts.verbose)
 
 # ================ start program algorithm ===================
 
-src_conn = ZFSConnection(source_host, trust=opts.trust, sshcipher=opts.sshcipher)
-dst_conn = ZFSConnection(destination_host, trust=opts.trust, sshcipher=opts.sshcipher)
+src_conn = ZFSConnection(source_host, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile)
+dst_conn = ZFSConnection(destination_host, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile)
 
 verbose_stderr("Replicating dataset %s:%s into %s:%s..." % (
 		source_host,source_dataset_name,
