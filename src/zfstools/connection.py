@@ -35,7 +35,7 @@ class ZFSConnection:
     _dirty = True
     _trust = False
     _properties = None
-    def __init__(self,host="localhost", trust=False, sshcipher=None, properties=None, identityfile=None):
+    def __init__(self,host="localhost", trust=False, sshcipher=None, properties=None, identityfile=None, knownhostsfile=None):
         self.host = host
         self._trust = trust
         self._properties = properties if properties else []
@@ -51,6 +51,8 @@ class ZFSConnection:
                 self.command.extend(["-c",sshcipher])
             if identityfile != None:
                 self.command.extend(["-i",identityfile])
+            if knownhostsfile != None:
+                self.command.extend(["-o","KnownHostsFile %s" % knownhostsfile])
             self.command.extend([self.host,"zfs"])
 
     def _get_poolset(self):
