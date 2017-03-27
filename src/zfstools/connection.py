@@ -52,7 +52,7 @@ class ZFSConnection:
             if identityfile != None:
                 self.command.extend(["-i",identityfile])
             if knownhostsfile != None:
-                self.command.extend(["-o","KnownHostsFile %s" % knownhostsfile])
+                self.command.extend(["-o","UserKnownHostsFile %s" % knownhostsfile])
             self.command.extend([self.host,"zfs"])
 
     def _get_poolset(self):
