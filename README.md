@@ -1,4 +1,4 @@
-#ZFS tools
+# ZFS tools
 
 | Donate to support this free software |
 |:------------------------------------:|
@@ -38,13 +38,13 @@ The utilities let you do this:
 
 The repository, bug tracker and Web site for this tool is at [http://github.com/Rudd-O/zfs-tools](http://github.com/Rudd-O/zfs-tools).  Comments to me through rudd-o@rudd-o.com.
 
-##Setting up
+## Setting up
 
 Setup is rather complicated.  It assumes that you already have ZFS running
 and vaults on both the machine you're going to back up and the machine that
 will be receiving the backup.
 
-###On the machine to back up
+### On the machine to back up
 
 - Install the zfs-shell command   
   `cp zfs-shell /usr/local/sbin`  
@@ -62,7 +62,7 @@ will be receiving the backup.
 - Set up a cron job to run `zsnap` as frequently as you want to,
   snapshotting the dataset you intend to replicate.
 
-###On the backup machine
+### On the backup machine
 
 - Set up public key authentication for SSH so the backup machine
   may log as the user `zfs` (as laid out above) in the machine to
@@ -78,7 +78,7 @@ will be receiving the backup.
   attributes on the received datasets so they do not automount
   on the backup machine.
 
-###Test
+### Test
 
 If all went well, you should be able to do this without issue:
 
