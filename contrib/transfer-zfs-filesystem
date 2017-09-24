@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+#
+# transfer zfs filesystem (and all children) from one server to another, with locking by zlock.
+#
+# Author: Simon Guest, 24/9/2014
+
+import optparse
+import socket
+import subprocess
+import sys
+
+def lock_or_unlock(function, filesystem, options):
+    if ':' in filesystem:
+        fs_host, fs = filesystem.split(':')
+        hostname = socket.gethostname().split('.')[0] # lose the domain part
+        cmd = ['ssh', fs_host, 'zlock', '-c', '"transfer-zfs-replicas on %s"' % hostname]
+    else:
+        cmd = ['zlock', '-c', 'transfer-zfs-replicas']
+        fs = filesystem
+    if options.verbose:
+        cmd += ['-v']
+    if options.dryrun:
+        cmd += ['-n']
+    cmd += [function, fs]
+    if options.verbose:
+        sys.stderr.write("%s\n" % ' '.join(cmd))
+    rc = subprocess.call(cmd)
+    return rc == 0
+
+def lock(filesystem, options):
+    return lock_or_unlock('lock', filesystem, options)
+
+def unlock(filesystem, options):
+    return lock_or_unlock('unlock', filesystem, options)
+
+def highlight(line):
+    """Highlight a line in the output."""
+    return("========== %s ==========" % line)
+
+def keep_only(filesystem, n, tier, options):
+    zsnap_command = ['zsnap', '-k', str(n), '-p', 'auto-%s-' % tier, '--nosnapshot']
+    if options.verbose:
+        zsnap_command += ['-v']
+    if options.dryrun:
+        zsnap_command += ['-n']
+    zsnap_command += [filesystem]
+    if options.verbose:
+        sys.stderr.write("%s\n" % ' '.join(zsnap_command))
+    subprocess.check_call(zsnap_command)
+
+def transfer(source, destination, options):
+    if options.daily:
+        # purge all hourly, weekly, monthly snapshots, and just keep one daily
+        for tier,keep in [('hourly', 0), ('daily', 1), ('weekly', 0), ('monthly', 0)]:
+            keep_only(source, keep, tier, options)
+    zreplicate_command = ['zreplicate', '--create-destination']
+    if options.verbose:
+        zreplicate_command += ['-v']
+    if options.dryrun:
+        zreplicate_command += ['-n']
+    zreplicate_command += [source, destination]
+    if options.verbose:
+        sys.stderr.write("%s\n" % highlight(' '.join(zreplicate_command)))
+    subprocess.check_call(zreplicate_command)
+
+def lock_and_transfer(source, destination, options):
+    if lock(source, options):
+        try:
+            if options.lock:
+                if lock(options.lock, options):
+                    try:
+                        transfer(source, destination, options)
+                    finally:
+                        unlock(options.lock, options)
+                else:
+                    sys.stderr.write("failed to acquire lock for %s - skipping\n" % options.lock)
+            else:
+                transfer(source, destination, options)
+        finally:
+            unlock(source, options)
+    else:
+        sys.stderr.write("failed to acquire lock for %s - skipping\n" % source)
+
+def main():
+    usage = "usage: %prog [options] [<host>:]source-filesystem [<host>:]destination-filesystem"
+    parser = optparse.OptionParser(usage)
+    parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='be verbose (default: %default)')
+    parser.add_option('-n', '--dry-run', action='store_true', dest='dryrun', default=False, help='don\'t actually manipulate any file systems')
+    parser.add_option('-d', '--just-latest-daily', action='store_true', dest='daily', default=False, help='purge hourly, weekly, monthly, and all but one daily')
+    parser.add_option('-l', '--lock', action='store', dest='lock', metavar='HOST-FILESYSTEM', default=None, help='lock filesystem on remote server also')
+    (options, args) = parser.parse_args(sys.argv)
+
+    if len(args) != 3:
+        sys.stderr.write("%s\n" % usage)
+        sys.exit(1)
+
+    lock_and_transfer(args[1], args[2], options)
+
+if __name__ == "__main__":
+    main()

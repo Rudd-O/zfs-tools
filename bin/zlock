@@ -1,0 +1,138 @@
+#!/usr/bin/env python
+#
+# zlock - lock a ZFS filesystem from being replicated by zbackup.
+#
+# In fact, the parameter filesystem is not validated to be a real ZFS filesystem,
+# since we choose not to care if the user locks a non-existent filesystem.
+#
+# There is no validation that the unlocker is the one holding the lock.
+#
+# Author: Simon Guest, 22/9/2014
+# Licensed under GNU General Public License GPLv3
+
+import optparse
+import os
+import os.path
+from stat import ST_MTIME
+import sys
+import time
+from zfstools.util import stderr, verbose_stderr, set_verbose
+
+LOCKDIR = "/var/lib/zfs-tools/zlock"
+
+def ensure_lockdir_exists():
+    if not os.path.isdir(LOCKDIR):
+        os.makedirs(LOCKDIR, 0755)
+
+def filesystem2lockfile(filesystem):
+    return filesystem.replace('/', ';')
+
+def lockfile2filesystem(lockfile):
+    return lockfile.replace(';', '/')
+
+def readme_comment(readme, prefix):
+    try:
+        with open(readme, 'r') as f:
+            comment = "%s%s" % (prefix, f.read().rstrip('\n'))
+    except IOError:
+        comment = ""
+    return comment
+
+def lockpath_comment(lockpath, prefix):
+    return readme_comment(os.path.join(lockpath, "README"), prefix)
+
+def lock(filesystem, options):
+    """Attempt to lock filesystem, return whether we did."""
+    lockpath = os.path.join(LOCKDIR, filesystem2lockfile(filesystem))
+    readme = os.path.join(lockpath, "README")
+    if options.dryrun:
+        # test whether lock is available, don't actually acquire it
+        if os.path.isdir(lockpath):
+            verbose_stderr("zlock: (dry-run) would fail to lock %s%s" % (filesystem, readme_comment(readme, " - ")))
+            return False
+        else:
+            verbose_stderr("zlock: (dry-run) would lock %s" % filesystem)
+            return True
+    else:
+        try:
+            os.mkdir(lockpath)
+            if options.comment:
+                # write a comment if we can
+                try:
+                    with open(readme, 'w') as f:
+                        f.write("%s\n" % options.comment)
+                except:
+                    verbose_stderr("zlock: failed to write README for %s" % filesystem)
+            verbose_stderr("zlock: locked %s" % filesystem)
+            return True
+        except OSError:
+            # failed to acquire lock
+            verbose_stderr("zlock: failed to lock %s%s" % (filesystem, readme_comment(readme, " - ")))
+            return False
+
+def unlock(filesystem, options):
+    """Attempt to unlock filesystem, return whether we did."""
+    lockpath = os.path.join(LOCKDIR, filesystem2lockfile(filesystem))
+    readme = os.path.join(lockpath, "README")
+    if options.dryrun:
+        # test whether lock is available, don't actually acquire it
+        if os.path.isdir(lockpath):
+            verbose_stderr("zlock: (dry-run) would unlock %s" % filesystem)
+            return True
+        else:
+            verbose_stderr("zlock: (dry-run) would fail to unlock %s (no such lock)" % filesystem)
+            return False
+    else:
+        if os.path.exists(readme):
+            os.unlink(readme)
+        try:
+            os.rmdir(lockpath)
+        except OSError:
+            verbose_stderr("zlock: failed to unlock %s (no such lock)" % filesystem)
+            return False
+        verbose_stderr("zlock: unlocked %s" % filesystem)
+        return True
+
+def list_locks(options):
+    for lockfile in os.listdir(LOCKDIR):
+        lockpath = os.path.join(LOCKDIR, lockfile)
+        filesystem = lockfile2filesystem(lockfile)
+        if options.verbose:
+            mtime = os.stat(lockpath)[ST_MTIME]
+            timestamp = time.strftime("%Y-%m-%d-%H%M", time.localtime(mtime))
+            print("%s %s%s" % (filesystem, timestamp, lockpath_comment(lockpath, " ")))
+        else:
+            print("%s" % filesystem)
+
+def main():
+    usage = "usage: %prog [options] [lock|unlock|list] [<filesystem>]"
+    parser = optparse.OptionParser(usage)
+    parser.add_option('-c', '--comment', action='store', dest='comment', default=None, help='comment explaining reason for lock (default: %default)')
+    parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='be verbose (default: %default)')
+    parser.add_option('-n', '--dry-run', action='store_true', dest='dryrun', default=False, help='don\'t actually take any locks')
+    (options, args) = parser.parse_args(sys.argv)
+
+    set_verbose(options.verbose)
+    ensure_lockdir_exists()
+
+    try:
+        if len(args) == 3 and args[1] == "lock":
+            success = lock(args[2], options)
+        elif len(args) == 3 and args[1] == "unlock":
+            success = unlock(args[2], options)
+        elif len(args) == 2 and args[1] == "list":
+            success = list_locks(options)
+        else:
+            stderr(usage)
+            sys.exit(1)
+    except Exception, e:
+        # report exception and exit
+        message = "zlock failed with exception: %s" % e
+        stderr(message)
+        sys.exit(1)
+
+    if not success:
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

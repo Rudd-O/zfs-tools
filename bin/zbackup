@@ -99,22 +99,44 @@ def snapshot(tier, filesystem, take_snapshot, keep, options):
     subprocess.check_call(zsnap_command)
 
 def replicate(filesystem, destination, options):
-    """Replicate given filesystem, possibly after deleting snapshots from other tiers."""
+    """Replicate given filesystem, possibly after deleting snapshots from other tiers.
+Replication is only performed if a zlock can be acquired on the filesystem."""
     # delete other tiers snapshots first?
     if options.delete_tiers != None:
         for tier in options.delete_tiers.split(','):
             snapshot(tier, filesystem, False, 0, options)
-    # replicate
-    zreplicate_command = ['zreplicate', '--create-destination', '--no-replication-stream']
+    # lock/unlock on filesystem
+    zlock_lock_command = ['zlock', 'lock']
+    zlock_unlock_command = ['zlock', 'unlock']
+    zlock_args = []
     if options.verbose:
-        zreplicate_command += ['-v']
+        zlock_args += ['-v']
     if options.dryrun:
-        zreplicate_command += ['-n']
-    if options.zreplicate_options != None:
-        zreplicate_command += options.zreplicate_options.split()
-    zreplicate_command += [filesystem, destination]
-    verbose_stderr("%s" % highlight(' '.join(zreplicate_command)))
-    subprocess.check_call(zreplicate_command)
+        zlock_args += ['-n']
+    zlock_args += [filesystem]
+    verbose_stderr("%s" % ' '.join(zlock_lock_command + zlock_args))
+    if subprocess.call(zlock_lock_command + zlock_args) == 0:
+        # acquired lock, so replicate
+        zreplicate_command = ['zreplicate', '--create-destination', '--no-replication-stream']
+        if options.verbose:
+            zreplicate_command += ['-v']
+        if options.dryrun:
+            zreplicate_command += ['-n']
+        if options.zreplicate_options != None:
+            zreplicate_command += options.zreplicate_options.split()
+        zreplicate_command += [filesystem, destination]
+        try:
+            verbose_stderr("%s" % highlight(' '.join(zreplicate_command)))
+            subprocess.check_call(zreplicate_command)
+        finally:
+            # release lock
+            verbose_stderr("%s" % ' '.join(zlock_unlock_command + zlock_args))
+            subprocess.check_call(zlock_unlock_command + zlock_args)
+    else:
+        if options.email_failure != None:
+            send_failure_email(options.email_failure, "%s has a zlock in place, use zlock list -v to troubleshoot" % filesystem)
+        verbose_stderr("skipping replication for %s" % filesystem)
+        
 
 def property_has_value(properties, property_name):
     """Return whether the property has a (not none) value."""
