@@ -94,6 +94,8 @@ def snapshot(tier, filesystem, take_snapshot, keep, options):
         zsnap_command += ['-t', options.timeformat]
     if options.dryrun:
         zsnap_command += ['-n']
+    if options.zsnap_options != None:
+        zsnap_command += options.zsnap_options.split()
     zsnap_command += [filesystem]
     verbose_stderr("%s" % highlight(' '.join(zsnap_command)))
     subprocess.check_call(zsnap_command)
@@ -240,6 +242,7 @@ def main():
     parser.add_option('-s', '--set', action='store_true', dest='set', default=False, help='set backup properties, do nothing else')
     parser.add_option('-u', '--unset', action='store_true', dest='unset', default=False, help='unset backup properties, do nothing else')
     parser.add_option('--zreplicate-options', action='store', dest='zreplicate_options', default=None, type="string", help='options passed to zreplicate (default: %default)')
+    parser.add_option('--zsnap-options', action='store', dest='zsnap_options', default=None, type="string", help='options passed to zsnap (default: %default)')
     (options, args) = parser.parse_args(sys.argv)
 
     set_verbose(options.verbose)
