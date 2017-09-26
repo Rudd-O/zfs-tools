@@ -77,9 +77,16 @@ class ZFSConnection:
         subprocess.check_call(self.command + ["zfs", "destroy", name])
         self._dirty = True
 
-    def destroy_recursively(self, name):
-        subprocess.check_call(self.command + ["zfs", "destroy", '-r', name])
+    def destroy_recursively(self, name, returnok=False):
+        """If returnok, then simply return success as a boolean."""
+        ok = True
+        cmd = self.command + ["zfs", "destroy", '-r', name]
+        if returnok:
+            ok = subprocess.call(cmd) == 0
+        else:
+            subprocess.check_call(cmd)
         self._dirty = True
+        return ok
 
     def snapshot_recursively(self,name,snapshotname,properties={}):
         plist = sum( map( lambda x: ['-o', '%s=%s' % x ], properties.items() ), [] )
