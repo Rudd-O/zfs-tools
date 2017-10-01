@@ -47,16 +47,16 @@ class ZFSConnection:
         if host in ['localhost','127.0.0.1']:
             self.command = []
         else:
-            self.command = ["ssh","-o","BatchMode yes","-a","-x"]
+            self.command = ["ssh","-o","BatchMode=yes","-a","-x"]
             if self._trust:
-                self.command.extend(["-o","CheckHostIP no"])
-                self.command.extend(["-o","StrictHostKeyChecking no"])
+                self.command.extend(["-o","CheckHostIP=no"])
+                self.command.extend(["-o","StrictHostKeyChecking=no"])
             if sshcipher != None:
                 self.command.extend(["-c",sshcipher])
             if identityfile != None:
                 self.command.extend(["-i",identityfile])
             if knownhostsfile != None:
-                self.command.extend(["-o","UserKnownHostsFile %s" % knownhostsfile])
+                self.command.extend(["-o","UserKnownHostsFile=%s" % knownhostsfile])
             self.command.extend([self.host])
 
     def _get_poolset(self):
