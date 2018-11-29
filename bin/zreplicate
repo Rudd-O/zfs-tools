@@ -8,6 +8,7 @@ sys.path.append(
 import itertools
 import multiprocessing
 import optparse
+import signal
 import time
 import traceback
 import urllib
@@ -230,6 +231,19 @@ else:
             lambda op: op[1]):
         operations_grouped_by_source.append(list(g))
     p = multiprocessing.Pool(processes=opts.parallel, initializer=set_timestamp, initargs=(time.strftime(opts.timeformat, time.gmtime() if opts.utc else time.localtime()),))
-    p.map(parallel_transfer, operations_grouped_by_source)
+    # terminate the pool on interrupt or SIGTERM
+    def terminate_handler(signum, frame):
+            verbose_stderr("SIGTERM, terminating ...\n")
+            p.terminate()
+            p.join()
+            sys.exit(1)
+    signal.signal(signal.SIGTERM, terminate_handler)
+    try:
+            p.map(parallel_transfer, operations_grouped_by_source)
+    except KeyboardInterrupt:
+            verbose_stderr("KeyboardInterrupt, terminating ...\n")
+            p.terminate()
+            p.join()
+            raise
 
 verbose_stderr("Replication complete.")
