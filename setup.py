@@ -35,6 +35,7 @@ setup(
 	version=version,
 	description='ZFS synchronization and snapshotting tools',
 	long_description = readme,
+	long_description_content_type='text/markdown',
 	author='Manuel Amador (Rudd-O)',
 	author_email='rudd-o@rudd-o.com',
 	license="GPL",
