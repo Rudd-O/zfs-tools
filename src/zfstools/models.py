@@ -25,18 +25,18 @@ class Dataset(object):
     def get_child(self, name):
         child = [ c for c in self.children if c.name == name and isinstance(c, Dataset) ]
         assert len(child) < 2
-        if not child: raise KeyError, name
+        if not child: raise KeyError(name)
         return child[0]
 
     def get_snapshots(self, flt=True):
-        if flt is True: flt = lambda x:True
+        if flt is True: flt = lambda _:True
         children = [ c for c in self.children if isinstance(c, Snapshot) and flt(c) ]
         return children
 
     def get_snapshot(self, name):
         children = [ c for c in self.get_snapshots() if c.name == name ]
         assert len(children) < 2
-        if not children: raise KeyError, name
+        if not children: raise KeyError(name)
         return children[0]
 
     def lookup(self, name):  # FINISH THIS
@@ -48,21 +48,21 @@ class Dataset(object):
 
         if "/" not in path:
             try: dset = self.get_child(path)
-            except KeyError: raise KeyError, "No such dataset %s at %s" % (path, self.get_path())
+            except KeyError: raise KeyError("No such dataset %s at %s" % (path, self.get_path()))
             if snapshot:
                 try: dset = dset.get_snapshot(snapshot)
-                except KeyError: raise KeyError, "No such snapshot %s at %s" % (snapshot, dset.get_path())
+                except KeyError: raise KeyError("No such snapshot %s at %s" % (snapshot, dset.get_path()))
         else:
             head, tail = path.split("/", 1)
             try: child = self.get_child(head)
-            except KeyError: raise KeyError, "No such dataset %s at %s" % (head, self.get_path())
+            except KeyError: raise KeyError("No such dataset %s at %s" % (head, self.get_path()))
             if snapshot: tail = tail + "@" + snapshot
             dset = child.lookup(tail)
 
         return dset
 
     def remove(self, child):
-        if child not in self.children: raise KeyError, child.name
+        if child not in self.children: raise KeyError(child.name)
         child.invalidated = True
         child.parent = None
         self.children.remove(child)
@@ -128,38 +128,41 @@ class PoolSet:  # maybe rewrite this as a dataset or something?
 
         if "/" not in path:
             try: dset = self.pools[path]
-            except KeyError: raise KeyError, "No such pool %s" % (name)
+            except KeyError: raise KeyError("No such pool %s" % (name))
             if snapshot:
                 try: dset = dset.get_snapshot(snapshot)
-                except KeyError: raise KeyError, "No such snapshot %s at %s" % (snapshot, dset.get_path())
+                except KeyError: raise KeyError("No such snapshot %s at %s" % (snapshot, dset.get_path()))
         else:
             head, tail = path.split("/", 1)
             try: pool = self.pools[head]
-            except KeyError: raise KeyError, "No such pool %s" % (head)
+            except KeyError: raise KeyError("No such pool %s" % (head))
             if snapshot: tail = tail + "@" + snapshot
             dset = pool.lookup(tail)
 
         return dset
 
-    def parse_zfs_r_output(self, creationtimes, properties = None ):
+    def parse_zfs_r_output(self, zfs_r_output, properties = None):
         """Parse the output of tab-separated zfs list.
 
         properties must be a list of property names expected to be found as
-        tab-separated entries on each line of creationtimes after the
+        tab-separated entries on each line of zfs_r_output after the
         dataset name and a tab.
         E.g. if properties passed here was ['creation'], we would expect
-        each creationtimes line to look like 'dataset	3249872348'
+        each zfs_r_output line to look like 'dataset	3249872348'
         """
-        properties = ['name', 'creation'] if properties == None else ['name'] + properties
+        try:
+            properties = ['name', 'creation'] if properties == None else ['name'] + properties
+        except TypeError:
+            assert 0, repr(properties)
 
-        def extract_properties( line ):
+        def extract_properties(s):
             items = s.strip().split( '\t' )
             assert len( items ) == len( properties ), (properties, items)
             propvalues = map( lambda x: None if x == '-' else x, items[ 1: ] )
             return [ items[ 0 ], zip( properties[ 1: ], propvalues ) ]
 
         # make into array
-        creations = OrderedDict([ extract_properties( s ) for s in creationtimes.splitlines() if s.strip() ])
+        creations = OrderedDict([ extract_properties( s ) for s in zfs_r_output.splitlines() if s.strip() ])
 
         # names of pools
         old_dsets = [ x.get_path() for x in self.walk() ]

@@ -204,7 +204,6 @@ def recursive_clear_obsolete(s, d):
     sched = []
 
     # we first collect all snapshot names, to later see if they are on both sides, one side, or what
-    all_snapshots = []
     snapshots_in_src = set([ m.name for m in s.get_snapshots() ])
     snapshots_in_dst = set([ m.name for m in d.get_snapshots() ])
 

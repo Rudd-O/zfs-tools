@@ -268,7 +268,7 @@ def main():
             else:
                 stderr("usage: zbackup <tier>")
                 sys.exit(1)
-    except Exception, e:
+    except Exception as e:
         # report exception and exit
         message = "zbackup failed with exception: %s" % e
         stderr(message)

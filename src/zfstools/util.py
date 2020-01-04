@@ -89,8 +89,8 @@ def progressbar(pipe, bufsize=-1, ratelimit=-1):
 
     for name, func in barprograms:
         try:
-            subprocess.call([name, '-h'], stdout=file(os.devnull, "w"), stderr=file(os.devnull, "w"), stdin=file(os.devnull, "r"))
-        except OSError, e:
+            subprocess.call([name, '-h'], stdout=open(os.devnull, "w"), stderr=open(os.devnull, "w"), stdin=open(os.devnull, "r"))
+        except OSError as e:
             if e.errno == 2: continue
             assert 0, "not reached while searching for clpbar or pv"
         return func(name)

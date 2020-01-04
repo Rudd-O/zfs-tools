@@ -6,7 +6,10 @@ import subprocess
 import os
 from zfstools.models import PoolSet
 from zfstools.util import progressbar, SpecialPopen
-from Queue import Queue
+try:
+    from Queue import Queue
+except ImportError:
+    from multiprocessing import Queue
 from threading import Thread
 
 
@@ -87,7 +90,7 @@ class ZFSConnection:
         cmd = list(self.command)
         if compression and cmd[0] == 'ssh': cmd.insert(1,"-C")
         cmd = cmd + ["send"] + opts + [name]
-        p = SpecialPopen(cmd,stdin=file(os.devnull),stdout=subprocess.PIPE,bufsize=bufsize)
+        p = SpecialPopen(cmd,stdin=open(os.devnull),stdout=subprocess.PIPE,bufsize=bufsize)
         return p
 
     def receive(self,name,pipe,opts=None,bufsize=-1,compression=False):
