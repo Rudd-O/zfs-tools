@@ -3,6 +3,7 @@ Tree models for the ZFS tools
 '''
 
 from collections import OrderedDict
+from datetime import datetime
 
 class Dataset(object):
     name = None
@@ -93,6 +94,9 @@ class Dataset(object):
 
     def get_property(self,name):
         return self._properties[ name ]
+    
+    def get_creation(self):
+        return datetime.fromtimestamp(int(self._properties["creation"]))
 
 
 class Pool(Dataset):
