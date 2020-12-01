@@ -22,6 +22,7 @@ parser.add_option('-t', '--timeformat', action='store', dest='timeformat', defau
 parser.add_option('--utc', action='store_true', dest='utc', default=False, help='Use UTC for timestamps (default: no)')
 parser.add_option('-n', '--dry-run', action='store_true', dest='dryrun', default=False, help='don\'t actually manipulate any file systems')
 parser.add_option('--nosnapshot', action='store_true', dest='nosnapshot', default=False, help='don\'t create new snapshot, only delete according to keep value (default: %default)')
+parser.add_option('-w', '--warnondestroyfailure', action='store_true', dest='warnondestroyfailure', default=False, help='warn rather than abort on destroy failure (default: %default)')
 parser.epilog =  """The --prefix and --property options are also used (if specified) to filter the snapshots to delete. 
 That is, only those snapshots that start with PREFIX and have a property named NAME with a value of
 VALUE will be considered for deletion."""
@@ -90,5 +91,9 @@ if keep > 0:
 else:
 	destroy_ssn = ssn
 for x in destroy_ssn:
-	verbose_stderr("Destroying obsolete snapshot: %s" % (x[-1].get_path()))
-	if not opts.dryrun: src_conn.destroy_recursively(x[-1].get_path())
+	path = (x[-1].get_path())
+	verbose_stderr("Destroying obsolete snapshot: %s" % path)
+	if not opts.dryrun:
+		ok = src_conn.destroy_recursively(path, returnok=opts.warnondestroyfailure)
+		if not ok:
+			stderr("Failed to destroy obsolete snapshot: %s" % path)
