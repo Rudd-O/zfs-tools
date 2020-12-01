@@ -160,6 +160,7 @@ class PoolSet:  # maybe rewrite this as a dataset or something?
             assert 0, repr(properties)
 
         def extract_properties(s):
+            s = s.decode('utf-8') if isinstance(s, bytes) else s
             items = s.strip().split( '\t' )
             assert len( items ) == len( properties ), (properties, items)
             propvalues = map( lambda x: None if x == '-' else x, items[ 1: ] )
