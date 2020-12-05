@@ -6,10 +6,7 @@ import subprocess
 import os
 from zfstools.models import PoolSet
 from zfstools.util import progressbar, SpecialPopen
-try:
-    from Queue import Queue
-except ImportError:
-    from multiprocessing import Queue
+from queue import Queue
 from threading import Thread
 
 

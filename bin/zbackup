@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 #
 # zbackup - property driven ZFS backup utility, using zsnap/zreplicate.
 #
@@ -70,13 +70,13 @@ def get_backup_properties(zpool, options, tier = None):
         property_ids = "all"
     zfs_get = subprocess.Popen(["zfs", "get", "-H", "-r", "-t", "filesystem", property_ids, zpool], stdout = subprocess.PIPE)
     for line in zfs_get.stdout:
-        (name, property, value, source) = line.rstrip('\n').split('\t')
+        (name, property, value, source) = line.decode('ascii').rstrip('\n').split('\t')
         if is_zprefixed(property):
             bare_property = zunprefixed(property)
             if source.startswith('inherited'):
                 source = 'inherited'
             if source == 'local' or source == 'received': # not this for now: or (source == 'inherited' and bare_property == snapshot_limit_property(tier)):
-                if not properties.has_key(name):
+                if not name in properties:
                     properties[name] = {}
                 if value != "-":
                     properties[name][bare_property] = (value, source)
@@ -120,7 +120,7 @@ def replicate(filesystem, destination, options):
 
 def property_has_value(properties, property_name):
     """Return whether the property has a (not none) value."""
-    if properties.has_key(property_name):
+    if property_name in properties:
         (value, source) = properties[property_name]
         return value != "none"
     else:
@@ -167,21 +167,21 @@ Note that the handling of backup properties with different sources is carefully 
 """
     # split properties according to source
     local_and_defaults = {}
-    nonlocal = {}
+    non_local = {}
     for name in properties.keys():
         if properties[name][1] == 'local':
             local_and_defaults[name] = properties[name]
         else:
-            nonlocal[name] = properties[name]
-    # nonlocal snapshot properties provide defaults for snapshot-limit if not set locally
-    for name in nonlocal.keys():
+            non_local[name] = properties[name]
+    # non_local snapshot properties provide defaults for snapshot-limit if not set locally
+    for name in non_local.keys():
         snapshot_tier = None
         if name.endswith(SNAPSHOTS_PROPERTY_SUFFIX):
             snapshot_tier = name[:-len(SNAPSHOTS_PROPERTY_SUFFIX)]
         elif name.endswith(SNAPSHOT_LIMIT_PROPERTY_SUFFIX):
             snapshot_tier = name[:-len(SNAPSHOT_LIMIT_PROPERTY_SUFFIX)]
-        if snapshot_tier != None and not local_and_defaults.has_key(snapshot_limit_property(snapshot_tier)):
-            local_and_defaults[snapshot_limit_property(snapshot_tier)] = nonlocal[name]
+        if snapshot_tier != None and not snapshot_limit_property(snapshot_tier) in local_and_defaults:
+            local_and_defaults[snapshot_limit_property(snapshot_tier)] = non_local[name]
 
     names = [name for name in sorted(local_and_defaults.keys()) if name not in [REPLICA_PROPERTY, REPLICATE_PROPERTY]] \
             + [name for name in sorted(local_and_defaults.keys()) if name     in [REPLICA_PROPERTY, REPLICATE_PROPERTY]]
