@@ -55,7 +55,7 @@ def zbackup_properties(tier):
 def get_zpools():
     """Return list of zpools."""
     zpools = []
-    zpool_list = subprocess.Popen(["zpool", "list", "-H"], stdout = subprocess.PIPE)
+    zpool_list = subprocess.Popen(["/sbin/zpool", "list", "-H"], stdout = subprocess.PIPE)
     for line in zpool_list.stdout:
         zpools.append(line.split()[0])
     return zpools
@@ -68,7 +68,7 @@ def get_backup_properties(zpool, options, tier = None):
         property_ids = ",".join([zprefixed(property) for property in zbackup_properties(tier)])
     else:
         property_ids = "all"
-    zfs_get = subprocess.Popen(["zfs", "get", "-H", "-r", "-t", "filesystem", property_ids, zpool], stdout = subprocess.PIPE)
+    zfs_get = subprocess.Popen(["/sbin/zfs", "get", "-H", "-r", "-t", "filesystem", property_ids, zpool], stdout = subprocess.PIPE)
     for line in zfs_get.stdout:
         (name, property, value, source) = line.decode('ascii').rstrip('\n').split('\t')
         if is_zprefixed(property):

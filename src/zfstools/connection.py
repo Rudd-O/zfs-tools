@@ -59,25 +59,25 @@ class ZFSConnection:
     def _get_poolset(self):
         if self._dirty:
             properties = [ 'creation' ] + self._properties
-            stdout2 = subprocess.check_output(self.command + ["zfs", "list", "-Hpr", "-o", ",".join( ['name'] + properties ), "-t", "all"])
+            stdout2 = subprocess.check_output(self.command + ["/sbin/zfs", "list", "-Hpr", "-o", ",".join( ['name'] + properties ), "-t", "all"])
             self._poolset.parse_zfs_r_output(stdout2,properties)
             self._dirty = False
         return self._poolset
     pools = property(_get_poolset)
 
     def create_dataset(self,name):
-        subprocess.check_call(self.command + ["zfs", "create", name])
+        subprocess.check_call(self.command + ["/sbin/zfs", "create", name])
         self._dirty = True
         return self.pools.lookup(name)
 
     def destroy_dataset(self, name):
-        subprocess.check_call(self.command + ["zfs", "destroy", name])
+        subprocess.check_call(self.command + ["/sbin/zfs", "destroy", name])
         self._dirty = True
 
     def destroy_recursively(self, name, returnok=False):
         """If returnok, then simply return success as a boolean."""
         ok = True
-        cmd = self.command + ["zfs", "destroy", '-r', name]
+        cmd = self.command + ["/sbin/zfs", "destroy", '-r', name]
         if returnok:
             ok = subprocess.call(cmd) == 0
         else:
@@ -87,7 +87,7 @@ class ZFSConnection:
 
     def snapshot_recursively(self,name,snapshotname,properties={}):
         plist = sum( map( lambda x: ['-o', '%s=%s' % x ], properties.items() ), [] )
-        subprocess.check_call(self.command + ["zfs", "snapshot", "-r" ] + plist + [ "%s@%s" % (name, snapshotname)])
+        subprocess.check_call(self.command + ["/sbin/zfs", "snapshot", "-r" ] + plist + [ "%s@%s" % (name, snapshotname)])
         self._dirty = True
 
     def send(self,name,opts=None,bufsize=-1,compression=False,lockdataset=None):
@@ -99,8 +99,8 @@ class ZFSConnection:
             if self.verbose:
                 cmd += ["-v"]
             cmd += [lockdataset, "--"]
-        cmd += ["zfs", "send"] + opts + [name]
-        p = SpecialPopen(cmd,stdin=file(os.devnull),stdout=subprocess.PIPE,bufsize=bufsize)
+        cmd += ["/sbin/zfs", "send"] + opts + [name]
+        p = SpecialPopen(cmd,stdin=open(os.devnull),stdout=subprocess.PIPE,bufsize=bufsize)
         return p
 
     def receive(self,name,pipe,opts=None,bufsize=-1,compression=False,lockdataset=None):
@@ -112,7 +112,7 @@ class ZFSConnection:
             if self.verbose:
                 cmd += ["-v"]
             cmd += [lockdataset, "--"]
-        cmd = cmd + ["zfs", "receive"] + opts + [name]
+        cmd = cmd + ["/sbin/zfs", "receive"] + opts + [name]
         p = SpecialPopen(cmd,stdin=pipe,bufsize=bufsize)
         return p
 
