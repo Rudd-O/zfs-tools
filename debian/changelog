@@ -1,4 +1,3 @@
-=======
 zfs-tools (0.6.1) wily; urgency=low
 
   * depend on zfsutils-linux
