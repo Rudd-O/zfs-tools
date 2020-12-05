@@ -3,7 +3,7 @@ nothing:
 
 install:
 	if test x"$(DESTDIR)" = x; then echo "DESTDIR unset."; exit 1; fi
-	python setup.py bdist_dumb
+	python3 setup.py bdist_dumb
 	tar zxvmf dist/zfs-tools-*.linux-*.tar.gz -C $(DESTDIR)
 	mv $(DESTDIR)/usr/local/* $(DESTDIR)/usr
 	rmdir $(DESTDIR)/usr/local
