@@ -71,7 +71,7 @@ def get_backup_properties(zpool, options, tier = None):
     cmd = ["zfs", "get", "-H", "-r", "-t", "filesystem", property_ids, zpool]
     zfs_get = subprocess.Popen(cmd, stdout = subprocess.PIPE, universal_newlines=True)
     for line in zfs_get.stdout:
-        (name, property, value, source) = line.rstrip('\n').split('\t')
+        (name, property, value, source) = line.decode('ascii').rstrip('\n').split('\t')
         if is_zprefixed(property):
             bare_property = zunprefixed(property)
             if source.startswith('inherited'):
