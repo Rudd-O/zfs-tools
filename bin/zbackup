@@ -55,7 +55,7 @@ def zbackup_properties(tier):
 def get_zpools():
     """Return list of zpools."""
     zpools = []
-    zpool_list = subprocess.Popen(["zpool", "list", "-H"], stdout = subprocess.PIPE)
+    zpool_list = subprocess.Popen(["/sbin/zpool", "list", "-H"], stdout = subprocess.PIPE)
     for line in zpool_list.stdout:
         zpools.append(line.split()[0])
     return zpools

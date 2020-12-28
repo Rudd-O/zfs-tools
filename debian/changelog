@@ -1,3 +1,9 @@
+zfs-tools (0.6.2) wily; urgency=low
+
+  * remove zfs-shell, zfs user and sudoers rules; use zfs permissions instead
+
+ -- Michael Hierweck <michael.hierweck@hostsharing.net>  Thu, 3 Dec 2020 10:14:26 +0000
+
 zfs-tools (0.6.1) wily; urgency=low
 
   * depend on zfsutils-linux

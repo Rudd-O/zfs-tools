@@ -5,6 +5,18 @@
 | <img width="164" height="164" title="" alt="" src="doc/bitcoin.png" /> |
 | [1Cw9nZu9ygknussPofMWCzmSMveusTbQvN](bitcoin:1Cw9nZu9ygknussPofMWCzmSMveusTbQvN) |
 
+## Experimental version of zfs-tools:
+
+In this experimential version of zfs-tools the "zfs-shell" was removed.
+ZFS permissions should be used instead:
+
+* sender side: zfs allow -u <user> send,snapshot,destroy,mount,hold <source>
+
+* receiver side: zfs allow -u <user> create,mount,receive <destination>
+
+
+## The following documentation needs to be updated:
+
 The ZFS backup tools will help you graft an entire ZFS pool as a filesystem
 into a backup machine, without having to screw around snapshot names or
 complicated shell commands or crontabs.
