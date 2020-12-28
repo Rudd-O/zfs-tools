@@ -28,9 +28,9 @@ def highlight(line):
     """Highlight a line in the output."""
     return("========== %s ==========" % line)
 
-def zprefixed(property):
+def zprefixed(prop):
     """Return property with <ZBACKUP_MODULE> prefix."""
-    return '%s:%s' % (ZBACKUP_MODULE, property)
+    return '%s:%s' % (ZBACKUP_MODULE, prop)
 
 def is_zprefixed(maybe_prefixed_property):
     """Return whether property has <ZBACKUP_MODULE> prefix."""
@@ -65,15 +65,15 @@ def get_backup_properties(zpool, options, tier = None):
     Only locally set and received properties are used;  inherited properties are ignored."""
     properties = {}
     if tier != None:
-        property_ids = ",".join([zprefixed(property) for property in zbackup_properties(tier)])
+        property_ids = ",".join([zprefixed(prop) for prop in zbackup_properties(tier)])
     else:
         property_ids = "all"
     cmd = ["zfs", "get", "-H", "-r", "-t", "filesystem", property_ids, zpool]
     zfs_get = subprocess.Popen(cmd, stdout = subprocess.PIPE, universal_newlines=True)
     for line in zfs_get.stdout:
-        (name, property, value, source) = line.rstrip('\n').split('\t')
-        if is_zprefixed(property):
-            bare_property = zunprefixed(property)
+        (name, prop, value, source) = line.rstrip('\n').split('\t')
+        if is_zprefixed(prop):
+            bare_property = zunprefixed(prop)
             if source.startswith('inherited'):
                 source = 'inherited'
             if source == 'local' or source == 'received': # not this for now: or (source == 'inherited' and bare_property == snapshot_limit_property(tier)):
@@ -202,16 +202,16 @@ def set_backup_properties(filesystem, property_values):
     for property_value in property_values:
         toks = property_value.split('=')
         if len(toks) == 2:
-            property, value = toks
-            zfs_command = ['zfs', 'set', '%s=%s' % (zprefixed(property), value), filesystem]
+            prop, value = toks
+            zfs_command = ['zfs', 'set', '%s=%s' % (zprefixed(prop), value), filesystem]
             sys.stdout.write("%s\n" % ' '.join(zfs_command))
             subprocess.check_call(zfs_command)
         else:
             sys.stderr.write("zbackup: ignoring badly formatted property=value: %s\n" % property_value)
 
 def unset_backup_properties(filesystem, properties):
-    for property in properties:
-        zfs_command = ['zfs', 'inherit', zprefixed(property), filesystem]
+    for prop in properties:
+        zfs_command = ['zfs', 'inherit', zprefixed(prop), filesystem]
         sys.stdout.write("%s\n" % ' '.join(zfs_command))
         subprocess.check_call(zfs_command)
 
