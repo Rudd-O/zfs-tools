@@ -228,4 +228,3 @@ class PoolSet:  # maybe rewrite this as a dataset or something?
 
     def __iter__(self):
         return self.walk()
-    
