@@ -3,10 +3,16 @@ Section: admin
 Priority: extra
 Maintainer: Manuel Amador (Rudd-O) <rudd-o@rudd-o.com>
 Build-Depends: debhelper (>= 7), python3, python3-setuptools
-Standards-Version: 3.8.3
+Standards-Version: 4.5.1.0
 Homepage: https://github.com/Rudd-O/zfs-tools
 
 Package: zfs-tools
 Architecture: all
-Depends: ${misc:Depends}, zfsutils-linux
+Depends: ${misc:Depends}
+Recommends: zfs-shell, python3
 Description: A collection of tools for ZFS
+
+Package: zfs-shell
+Architecture: all
+Depends: zfs-tools, sudo
+Description: A shell wrapping invokations of zfs and zpool with sudo
