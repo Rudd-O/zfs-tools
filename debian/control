@@ -8,11 +8,17 @@ Homepage: https://github.com/Rudd-O/zfs-tools
 
 Package: zfs-tools
 Architecture: all
-Depends: ${misc:Depends}
-Recommends: zfs-shell, python3
+Depends: python3-zfstools
+Recommends: ${misc:Depends}, zfs-shell
 Description: A collection of tools for ZFS
 
 Package: zfs-shell
 Architecture: all
-Depends: zfs-tools, sudo
+Depends: ${misc:Depends}, zfs-tools, sudo
 Description: A shell wrapping invokations of zfs and zpool with sudo
+
+Package: python3-zfstools
+Architecture: all
+Depends: ${misc:Depends}, zfsutils-linux
+Recommends: python3
+Description: A collection python utilities for ZFS
