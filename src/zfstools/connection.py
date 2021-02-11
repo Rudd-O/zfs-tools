@@ -100,7 +100,7 @@ class ZFSConnection:
                 cmd += ["-v"]
             cmd += [lockdataset, "--"]
         cmd += ["zfs", "send"] + opts + [name]
-        p = SpecialPopen(cmd,stdin=file(os.devnull),stdout=subprocess.PIPE,bufsize=bufsize)
+        p = SpecialPopen(cmd,stdin=open(os.devnull),stdout=subprocess.PIPE,bufsize=bufsize)
         return p
 
     def receive(self,name,pipe,opts=None,bufsize=-1,compression=False,lockdataset=None):
