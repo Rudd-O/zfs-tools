@@ -85,7 +85,8 @@ class ZFSConnection:
         self._dirty = True
         return ok
 
-    def snapshot_recursively(self,name,snapshotname,properties={}):
+    def snapshot_recursively(self,name,snapshotname,properties=None):
+        properties = {} if properties is None else properties
         plist = sum( map( lambda x: ['-o', '%s=%s' % x ], properties.items() ), [] )
         subprocess.check_call(self.command + ["zfs", "snapshot", "-r" ] + plist + [ "%s@%s" % (name, snapshotname)])
         self._dirty = True
