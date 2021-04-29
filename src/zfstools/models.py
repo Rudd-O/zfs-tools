@@ -1,9 +1,11 @@
 '''
 Tree models for the ZFS tools
 '''
-
+import sys
 from collections import OrderedDict
 from datetime import datetime
+
+is_py2=(sys.version_info[0] == 2)
 
 class Dataset(object):
     name = None
@@ -146,6 +148,7 @@ class PoolSet:  # maybe rewrite this as a dataset or something?
         return dset
 
     def parse_zfs_r_output(self, zfs_r_output, properties = None):
+        global is_py2
         """Parse the output of tab-separated zfs list.
 
         properties must be a list of property names expected to be found as
@@ -160,7 +163,7 @@ class PoolSet:  # maybe rewrite this as a dataset or something?
             assert 0, repr(properties)
 
         def extract_properties(s):
-            s = s.decode('utf-8') if isinstance(s, bytes) else s
+            if not is_py2 and isinstance(s, bytes): s = s.decode('utf-8')
             items = s.strip().split( '\t' )
             assert len( items ) == len( properties ), (properties, items)
             propvalues = map( lambda x: None if x == '-' else x, items[ 1: ] )
