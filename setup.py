@@ -45,7 +45,12 @@ setup(
 					]),
 	classifiers = classifiers,
 	packages=["zfstools"],
-	scripts=["bin/zreplicate", 'bin/zfs-shell', 'bin/zsnap', 'bin/zbackup', 'bin/zflock'],
+        entry_points = {
+            'console_scripts': ["zbackup=zfstools.zbackup:main",
+                                "zflock=zfstools.zflock:main",
+                                "zreplicate=zfstools.zreplicate:main",
+                                "zsnap=zfstools.zsnap:main"],
+        },
 	keywords="ZFS filesystems backup synchronization snapshot",
 	zip_safe=False,
 )

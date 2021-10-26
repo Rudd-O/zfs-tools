@@ -1,0 +1,2 @@
+bin/zfs-shell
+etc/sudoers.d/zfs-shell
