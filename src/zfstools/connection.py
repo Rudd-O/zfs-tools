@@ -35,11 +35,12 @@ class ZFSConnection:
     _dirty = True
     _trust = False
     _properties = None
-    def __init__(self,host="localhost", trust=False, sshcipher=None, properties=None, identityfile=None, knownhostsfile=None, verbose=False):
+    def __init__(self,host="localhost", subset=None, trust=False, sshcipher=None, properties=None, identityfile=None, knownhostsfile=None, verbose=False):
         self.host = host
         self._trust = trust
         self._properties = properties if properties else []
         self._poolset= PoolSet()
+        self._subset_name = subset
         self.verbose = verbose
         if host in ['localhost','127.0.0.1']:
             self.command = []
@@ -59,23 +60,29 @@ class ZFSConnection:
     def _get_poolset(self):
         if self._dirty:
             properties = [ 'creation' ] + self._properties
-            stdout2 = subprocess.check_output(self.command + ["zfs", "list", "-Hpr", "-o", ",".join( ['name'] + properties ), "-t", "all"])
+            stdout2 = subprocess.check_output(self.command + ["zfs", "list", "-Hpr", "-o", ",".join( ['name'] + properties ), "-t", "all"]+([self._subset_name] if self._subset_name is not None else []))
             self._poolset.parse_zfs_r_output(stdout2,properties)
             self._dirty = False
         return self._poolset
     pools = property(_get_poolset)
 
     def create_dataset(self,name):
+        if self._subset_name is not None and not name.startswith(self._subset_name):
+            raise ValueError('Your connection is limited to '+self._subset_name)
         subprocess.check_call(self.command + ["zfs", "create", name])
         self._dirty = True
         return self.pools.lookup(name)
 
     def destroy_dataset(self, name):
+        if self._subset_name is not None and not name.startswith(self._subset_name):
+            raise ValueError('Your connection is limited to '+self._subset_name)
         subprocess.check_call(self.command + ["zfs", "destroy", name])
         self._dirty = True
 
     def destroy_recursively(self, name, returnok=False):
         """If returnok, then simply return success as a boolean."""
+        if self._subset_name is not None and not name.startswith(self._subset_name):
+            raise ValueError('Your connection is limited to '+self._subset_name)
         ok = True
         cmd = self.command + ["zfs", "destroy", '-r', name]
         if returnok:
@@ -86,12 +93,16 @@ class ZFSConnection:
         return ok
 
     def snapshot_recursively(self,name,snapshotname,properties=None):
+        if self._subset_name is not None and not name.startswith(self._subset_name):
+            raise ValueError('Your connection is limited to '+self._subset_name)
         properties = {} if properties is None else properties
         plist = sum( map( lambda x: ['-o', '%s=%s' % x ], properties.items() ), [] )
         subprocess.check_call(self.command + ["zfs", "snapshot", "-r" ] + plist + [ "%s@%s" % (name, snapshotname)])
         self._dirty = True
 
     def send(self,name,opts=None,bufsize=-1,compression=False,lockdataset=None):
+        if self._subset_name is not None and not name.startswith(self._subset_name):
+            raise ValueError('Your connection is limited to '+self._subset_name)
         if not opts: opts = []
         cmd = list(self.command)
         if compression and cmd[0] == 'ssh': cmd.insert(1,"-C")
@@ -105,6 +116,8 @@ class ZFSConnection:
         return p
 
     def receive(self,name,pipe,opts=None,bufsize=-1,compression=False,lockdataset=None):
+        if self._subset_name is not None and not name.startswith(self._subset_name):
+            raise ValueError('Your connection is limited to '+self._subset_name)
         if not opts: opts = []
         cmd = list(self.command)
         if compression and cmd[0] == 'ssh': cmd.insert(1,"-C")

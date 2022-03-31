@@ -61,7 +61,7 @@ def main():
 
         # ================ start program algorithm ===================
 
-        src_conn = ZFSConnection(source_host,properties=snapshot_properties.keys())
+        src_conn = ZFSConnection(source_host, subset=source_dataset_name, properties=snapshot_properties.keys())
         snapshot_unique_name = snapshot_prefix + snapshot_postfix()
         flt = lambda x: x.name.startswith(snapshot_prefix) and (not snapshot_properties or x.get_property(snapshot_properties.keys()[0])==snapshot_properties.values()[0])
 
