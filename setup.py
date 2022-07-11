@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from setuptools import setup
+from distutils.core import setup
 import os
 
 dir = os.path.dirname(__file__)
