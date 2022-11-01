@@ -182,11 +182,9 @@ class PoolSet:  # maybe rewrite this as a dataset or something?
                 dset, snapshot = dset.split("@")
             else:
                 snapshot = None
-            if "/" not in dset:  # pool name
-                if dset not in self.pools:
-                    self.pools[dset] = Pool(dset)
-                    fs = self.pools[dset]
             poolname, pathcomponents = dset.split("/")[0], dset.split("/")[1:]
+            if poolname not in self.pools:
+                self.pools[poolname] = Pool(poolname)
             fs = self.pools[poolname]
             for pcomp in pathcomponents:
                 # traverse the child hierarchy or create if that fails

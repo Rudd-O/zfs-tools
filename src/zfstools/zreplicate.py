@@ -69,8 +69,8 @@ def main():
 
         # ================ start program algorithm ===================
 
-        src_conn = ZFSConnection(source_host, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile,  knownhostsfile=opts.knownhostsfile, verbose=opts.verbose)
-        dst_conn = ZFSConnection(destination_host, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile, knownhostsfile=opts.knownhostsfile, verbose=opts.verbose)
+        src_conn = ZFSConnection(source_host, subset=source_dataset_name, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile,  knownhostsfile=opts.knownhostsfile, verbose=opts.verbose)
+        dst_conn = ZFSConnection(destination_host, subset=destination_dataset_name, trust=opts.trust, sshcipher=opts.sshcipher, identityfile=opts.identityfile, knownhostsfile=opts.knownhostsfile, verbose=opts.verbose)
 
         verbose_stderr("Replicating dataset %s:%s into %s:%s..." % (
                         source_host,source_dataset_name,
