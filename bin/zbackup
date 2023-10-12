@@ -82,7 +82,7 @@ def get_backup_properties(zpool, options, tier = None):
                 if value != "-":
                     properties[name][bare_property] = (value, source)
                     verbose_stderr("%s %s=%s %s" % (name, bare_property, value, source))
-    retcode = p.wait()
+    retcode = zfs_get.wait()
     if retcode != 0:
         raise subprocess.CalledProcessError(retcode, cmd)
     return properties
