@@ -2,3 +2,7 @@ include TODO
 include README.md
 include contrib/*
 include doc/bitcoin.png
+include *.spec
+include bin/*
+include tox.ini
+include mypy.ini

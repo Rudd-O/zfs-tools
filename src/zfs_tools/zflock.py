@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-#
 # zflock - advisory locking for ZFS filesystems, using flock on a parallel directory tree.
 #
 # The parameter filesystem is not validated to be a real ZFS filesystem,
@@ -15,23 +13,26 @@ import os.path
 import platform
 import subprocess
 import sys
-import time
 import traceback
-from zfstools.util import stderr, verbose_stderr, set_verbose
+from zfs_tools.util import stderr, verbose_stderr, set_verbose
 
 LOCKDIR = "/var/lib/zfs-tools/zflock"
+
 
 def die(message):
     stderr("zflock: %s" % message)
     sys.exit(1)
+
 
 def lockpath_for(filesystem):
     if os.path.isabs(filesystem):
         die("invalid filesystem (absolute path): %s" % filesystem)
     return os.path.join(LOCKDIR, filesystem)
 
+
 def readme_for(lockpath):
     return os.path.join(lockpath, "README")
+
 
 def readme_comment(readme, prefix):
     try:
@@ -41,11 +42,14 @@ def readme_comment(readme, prefix):
         comment = ""
     return comment
 
+
 def print_failure(message):
     stderr("zflock: %s on %s" % (message, platform.node()))
 
+
 def print_verbose(message):
     verbose_stderr("zflock: %s on %s" % (message, platform.node()))
+
 
 def lock_and_run(filesystem, command, options):
     """Attempt to lock filesystem and run command, return whether we did."""
@@ -53,7 +57,7 @@ def lock_and_run(filesystem, command, options):
     locked = False
     lockpath = lockpath_for(filesystem)
     try:
-        os.makedirs(lockpath, 0755)
+        os.makedirs(lockpath, 0o0755)
     except os.error:
         pass
     readme = readme_for(lockpath)
@@ -62,7 +66,9 @@ def lock_and_run(filesystem, command, options):
         try:
             fcntl.flock(x, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError:
-            print_failure("failed to lock %s%s" % (filesystem, readme_comment(readme, " # ")))
+            print_failure(
+                "failed to lock %s%s" % (filesystem, readme_comment(readme, " # "))
+            )
             ok = False
         if ok:
             locked = True
@@ -78,7 +84,7 @@ def lock_and_run(filesystem, command, options):
             print_verbose("locked %s" % filesystem)
             ok = subprocess.call(command) == 0
             if not ok:
-                print_failure("non-zero exit status from %s" % ' '.join(command))
+                print_failure("non-zero exit status from %s" % " ".join(command))
         os.close(x)
         if locked:
             print_verbose("unlocked %s" % filesystem)
@@ -87,8 +93,9 @@ def lock_and_run(filesystem, command, options):
         ok = False
     return ok
 
+
 def list_locks(options):
-    for (dirpath, dirnames, filenames) in os.walk(LOCKDIR):
+    for dirpath, dirnames, filenames in os.walk(LOCKDIR):
         for d in dirnames:
             lockpath = os.path.join(dirpath, d)
             filesystem = os.path.relpath(lockpath, LOCKDIR)
@@ -100,11 +107,14 @@ def list_locks(options):
                     fcntl.flock(x, fcntl.LOCK_UN)
             except IOError:
                 # failed to acquire lock, so must have been locked
-                print("%s%s" % (filesystem, readme_comment(readme_for(lockpath), " # ")))
+                print(
+                    "%s%s" % (filesystem, readme_comment(readme_for(lockpath), " # "))
+                )
     return True
 
+
 def gc_locks(options):
-    for (dirpath, dirnames, filenames) in os.walk(LOCKDIR, topdown=False):
+    for dirpath, dirnames, filenames in os.walk(LOCKDIR, topdown=False):
         for d in dirnames:
             lockpath = os.path.join(dirpath, d)
             filesystem = os.path.relpath(lockpath, LOCKDIR)
@@ -125,16 +135,48 @@ def gc_locks(options):
                     fcntl.flock(x, fcntl.LOCK_UN)
             except IOError:
                 # failed to acquire lock, so must have been locked
-                print_verbose("not removing %s%s" % (filesystem, readme_comment(readme_for(lockpath), " # ")))
+                print_verbose(
+                    "not removing %s%s"
+                    % (filesystem, readme_comment(readme_for(lockpath), " # "))
+                )
     return True
+
 
 def main():
     usage = "usage: %prog [options] [<filesystem> <command>]"
     parser = optparse.OptionParser(usage)
-    parser.add_option("-l", "--list", action="store_true", dest="list", default=False, help="list locks, do nothing else (default: %default)")
-    parser.add_option("-g", "--gc", action="store_true", dest="gc", default=False, help="garbage collect, do nothing else (default: %default)")
-    parser.add_option("-c", "--comment", action="store", dest="comment", default=None, help="comment explaining reason for lock (default: %default)")
-    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="be verbose (default: %default)")
+    parser.add_option(
+        "-l",
+        "--list",
+        action="store_true",
+        dest="list",
+        default=False,
+        help="list locks, do nothing else (default: %default)",
+    )
+    parser.add_option(
+        "-g",
+        "--gc",
+        action="store_true",
+        dest="gc",
+        default=False,
+        help="garbage collect, do nothing else (default: %default)",
+    )
+    parser.add_option(
+        "-c",
+        "--comment",
+        action="store",
+        dest="comment",
+        default=None,
+        help="comment explaining reason for lock (default: %default)",
+    )
+    parser.add_option(
+        "-v",
+        "--verbose",
+        action="store_true",
+        dest="verbose",
+        default=False,
+        help="be verbose (default: %default)",
+    )
     (options, args) = parser.parse_args(sys.argv)
 
     set_verbose(options.verbose)
@@ -161,6 +203,3 @@ def main():
 
     if not ok:
         sys.exit(1)
-
-if __name__ == "__main__":
-    main()

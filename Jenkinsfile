@@ -1,4 +1,4 @@
 // https://github.com/Rudd-O/shared-jenkins-libraries
 @Library('shared-jenkins-libraries@master') _
 
-genericFedoraRPMPipeline()
+genericFedoraRPMPipeline(null, buildStrategyMakeSRPM(), null, null, testStrategyMakeTest())
