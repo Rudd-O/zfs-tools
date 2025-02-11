@@ -21,7 +21,7 @@ clean:
 	cd $(ROOT_DIR) && find -name '*~' -print0 | xargs -0r rm -fv && rm -fr *.tar.gz *.rpm src/*.egg-info *.egg-info dist build
 
 dist: clean
-	cd $(ROOT_DIR) || exit $$? ; python3 -m build
+	cd $(ROOT_DIR) || exit $$? ; python3 -m build -s
 
 srpm: dist
 	@which rpmbuild || { echo 'rpmbuild is not available.  Please install the rpm-build package with the command `dnf install rpm-build` to continue, then rerun this step.' ; exit 1 ; }
