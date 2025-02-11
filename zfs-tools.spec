@@ -14,7 +14,7 @@ Summary:        ZFS synchronization and snapshotting tools
 
 License:        GPLv2
 URL:            https://github.com/Rudd-O/%{name}
-Source:         %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
+Source:         %{url}/archive/v%{version}/%{module_name}-%{version}.tar.gz
 
 Requires:       zfs
 BuildArch:      noarch
@@ -33,7 +33,7 @@ Summary: A minimal shell to remotely use ZFS for send and receive
 Use this shell (and optional contrib sudoers file) to permit access to zreplicate.
 
 %prep
-%autosetup -p1 -n %{name}-%{version}
+%autosetup -p1 -n %{module_name}-%{version}
 
 %generate_buildrequires
 %pyproject_buildrequires -t

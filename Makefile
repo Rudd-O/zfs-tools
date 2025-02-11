@@ -25,9 +25,9 @@ dist: clean
 
 srpm: dist
 	@which rpmbuild || { echo 'rpmbuild is not available.  Please install the rpm-build package with the command `dnf install rpm-build` to continue, then rerun this step.' ; exit 1 ; }
-	cd $(ROOT_DIR) || exit $$? ; rpmbuild --define "_srcrpmdir ." -ts dist/`rpmspec -q --queryformat '%{name}-%{version}.tar.gz\n' *spec | head -1`
+	cd $(ROOT_DIR) || exit $$? ; rpmbuild --define "_srcrpmdir ." -ts dist/`rpmspec -q --queryformat 'zfs_tools-%{version}.tar.gz\n' *spec | head -1`
 
 rpm: dist
 	@which rpmbuild || { echo 'rpmbuild is not available.  Please install the rpm-build package with the command `dnf install rpm-build` to continue, then rerun this step.' ; exit 1 ; }
-	cd $(ROOT_DIR) || exit $$? ; rpmbuild --define "_srcrpmdir ." --define "_rpmdir builddir.rpm" -ta dist/`rpmspec -q --queryformat '%{name}-%{version}.tar.gz\n' *spec | head -1`
+	cd $(ROOT_DIR) || exit $$? ; rpmbuild --define "_srcrpmdir ." --define "_rpmdir builddir.rpm" -ta dist/`rpmspec -q --queryformat 'zfs_tools-%{version}.tar.gz\n' *spec | head -1`
 	cd $(ROOT_DIR) ; mv -f builddir.rpm/*/* . && rm -rf builddir.rpm
